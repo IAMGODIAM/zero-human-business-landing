@@ -1,24 +1,27 @@
-Autonomous Revenue OS - Landing Page v1
+Autonomous Revenue OS - Landing Page v2
 
-Objective
-- Launch a high-conversion landing page for a "zero-human" business offer.
-- Positioning chosen by default: AI Automation Agency (done-for-you systems for SMBs).
+Live URL
+- https://purple-moss-015d42e0f.1.azurestaticapps.net
 
-What this includes
-- index.html: full one-page conversion flow
-- styles.css: responsive visual system
+Repository
+- https://github.com/IAMGODIAM/zero-human-business-landing
 
-Offer architecture used
-1) Capture Layer: inbound leads and enrichment
-2) Decision Layer: qualification and routing
-3) Conversion Layer: follow-up + booking
-4) Fulfillment Layer: onboarding + reporting
+What is included
+- index.html: advanced one-page site for agent-run business offer
+- styles.css: responsive design system
+- script.js: interactive logic (ROI calculator, lead intake handling, writing invoke panel)
+- docs/AGENT_BUSINESS_OS.md: operating charter for autonomous business execution
+- docs/WRITING_INVOKE_SETUP.md: integration notes for writing repo invocation
 
-Recommended next edits (fast)
-- Replace brand name and email CTA
-- Add real client proof (logos, outcomes)
-- Swap pricing to your final economics
-- Add calendly or form endpoint instead of mailto
+Advanced features in v2
+1) 30-day Agent Business OS rollout section
+2) ROI forecaster with instant monthly impact estimate
+3) Built-in Writing Engine Invoke panel:
+   - Generic webhook mode
+   - OpenAI-compatible mode
+   - Architect's Voice tRPC mode
+4) Lead capture form with UTM preservation and build request draft flow
+5) Improved navigation, KPI strip, and structured conversion architecture
 
 Local preview
 - Open index.html directly in browser
@@ -26,21 +29,18 @@ or
 - python3 -m http.server 8080
 - visit http://localhost:8080
 
-Azure Static Web Apps deploy (fast lane)
-1) Create repo and push this folder
-2) Create Static Web App:
-   az staticwebapp create \
-     --name zero-human-landing \
-     --resource-group nerve-center-rg \
-     --location eastus2 \
-     --source https://github.com/<owner>/<repo> \
-     --branch main \
-     --app-location "/" \
-     --output-location "/"
+Deployment (Azure Static Web Apps)
+- Connected to GitHub main branch via Actions workflow.
+- Every push to main auto-deploys.
 
-3) If needed, set custom domain and SSL in Azure portal.
+Quick customization checklist
+- Replace brand + contact email
+- Point lead form to production webhook/CRM endpoint
+- Add Calendly or direct booking endpoint
+- Add real proof: logos, outcomes, testimonials
+- Map custom domain and SSL in Azure portal
 
 Strategic note
-- This page is the top-of-funnel vehicle.
-- The actual edge is your operations system and fulfillment quality.
-- Keep offer simple at launch: one ICP, one promise, one CTA.
+- This site is the top-of-funnel vehicle.
+- Core advantage remains your operating system quality and iteration cadence.
+- Keep one ICP, one promise, one primary CTA until conversion data says expand.
