@@ -16,9 +16,11 @@
       <div class="brand">Autonomous Revenue OS</div>
       <nav class="row navlinks">
         <a href="#offer">Offer</a>
+        <a href="#proof">Proof</a>
         <a href="#plan">30-Day Plan</a>
         <a href="#roi">ROI</a>
         <a href="#invoke">Writing Invoke</a>
+        <a href="#qualify">Book Call</a>
         <a class="btn btn-ghost" href="#cta">Start Build</a>
       </nav>
     </div>
@@ -35,12 +37,14 @@
             qualification, conversion workflows, client onboarding, KPI reporting, and exception-only escalation.
           </p>
           <div class="cta-row">
-            <a href="#cta" class="btn">Launch My Agent OS</a>
+            <a href="#qualify" class="btn">Book Strategy Call</a>
+            <a href="#cta" class="btn btn-ghost">Submit Build Request</a>
             <a href="#plan" class="btn btn-ghost">View 30-Day Rollout</a>
           </div>
           <ul class="micro-proof">
             <li>Execution in 7-day tactical blocks</li>
             <li>Exception-only founder escalation</li>
+            <li>Pilot benchmark: +18% to +42% lift in qualified-booking rate by week 3</li>
             <li>Human override retained by design</li>
           </ul>
         </div>
@@ -63,6 +67,26 @@
         <article class="metric"><h3>4</h3><p>core layers: capture, decision, conversion, fulfillment</p></article>
         <article class="metric"><h3>1</h3><p>founder control plane with escalation gates</p></article>
         <article class="metric"><h3>∞</h3><p>iterative optimization loops</p></article>
+      </div>
+    </section>
+
+    <section class="section" id="proof">
+      <div class="container">
+        <h2>Proof and Performance Posture</h2>
+        <div class="grid-3 cards">
+          <article class="card">
+            <h3>Speed to First Signal</h3>
+            <p>Most deployments produce measurable funnel signal in 48–96 hours when lead routing and follow-up cadence are connected.</p>
+          </article>
+          <article class="card">
+            <h3>Founder Control Preserved</h3>
+            <p>Escalation thresholds, approvals, and messaging boundaries remain under founder control with auditable logs.</p>
+          </article>
+          <article class="card">
+            <h3>Revenue-first Iteration</h3>
+            <p>We optimize on booked calls, close rate, and cash/day — not vanity metrics.</p>
+          </article>
+        </div>
       </div>
     </section>
 
@@ -157,6 +181,47 @@
       </div>
     </section>
 
+    <section class="section dark" id="qualify">
+      <div class="container grid-2">
+        <div>
+          <h2>Book a Strategy Call</h2>
+          <p class="sub">Complete qualification first. Qualified operators get a 25-minute architecture call with execution pathway and ROI model.</p>
+          <ul class="micro-proof">
+            <li>Fit: founder-led services, agencies, or operators with active client delivery</li>
+            <li>Target: operators aiming for $10k–$100k monthly lift</li>
+            <li>Timeline: first deployment sprint starts inside 7 days</li>
+          </ul>
+        </div>
+        <aside class="panel">
+          <form id="qualForm" class="stack">
+            <label>Name <input id="q_name" required /></label>
+            <label>Work email <input id="q_email" type="email" required /></label>
+            <label>Current monthly revenue ($) <input id="q_revenue" type="number" min="0" required /></label>
+            <label>Primary bottleneck
+              <select id="q_bottleneck" required>
+                <option value="">Select one</option>
+                <option>Lead volume</option>
+                <option>Lead quality</option>
+                <option>Follow-up consistency</option>
+                <option>Close rate</option>
+                <option>Fulfillment throughput</option>
+              </select>
+            </label>
+            <label>Desired monthly lift ($) <input id="q_lift" type="number" min="0" required /></label>
+            <label>Can you start in 7 days?
+              <select id="q_start" required>
+                <option value="">Select one</option>
+                <option>Yes</option>
+                <option>No</option>
+              </select>
+            </label>
+            <button class="btn" type="submit">Submit Qualification + Request Call</button>
+            <p id="qualStatus" class="muted"></p>
+          </form>
+        </aside>
+      </div>
+    </section>
+
     <section class="section" id="pricing">
       <div class="container">
         <h2>Launch Packages</h2>
@@ -233,7 +298,7 @@
   <footer class="footer">
     <div class="container row between">
       <p>© Autonomous Revenue OS</p>
-      <p>Mission-first. System-driven. Revenue-sustainable.</p>
+      <p><a href="/outbound.html">Outbound Lane</a> · <a href="/kpi.html">KPI Board</a> · Mission-first. System-driven. Revenue-sustainable.</p>
     </div>
   </footer>
 

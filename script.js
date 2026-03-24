@@ -90,6 +90,46 @@ leadForm?.addEventListener('submit', async (e) => {
   }
 });
 
+const qualForm = document.getElementById('qualForm');
+const qualStatus = document.getElementById('qualStatus');
+
+qualForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const payload = {
+    name: document.getElementById('q_name').value,
+    email: document.getElementById('q_email').value,
+    company: 'Qualification Form',
+    target: `$${document.getElementById('q_lift').value} monthly lift`,
+    stack: JSON.stringify({
+      form: 'qualification',
+      monthlyRevenue: Number(document.getElementById('q_revenue').value || 0),
+      bottleneck: document.getElementById('q_bottleneck').value,
+      canStartIn7Days: document.getElementById('q_start').value
+    }),
+    utm: getUTM(),
+    submittedAt: new Date().toISOString(),
+    source: 'strategy-call-qualification'
+  };
+
+  qualStatus.textContent = 'Submitting qualification...';
+
+  try {
+    const res = await fetch('/api/lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const parsed = await safeJson(res);
+    if (!res.ok) throw new Error(parsed.raw || `HTTP ${res.status}`);
+
+    qualStatus.textContent = 'Qualified request received. We will send your call options shortly.';
+    qualForm.reset();
+  } catch (err) {
+    qualStatus.textContent = `Qualification intake unavailable (${err.message}). Use build request form below.`;
+  }
+});
+
 const invokeForm = document.getElementById('invokeForm');
 const invokeOutput = document.getElementById('invokeOutput');
 

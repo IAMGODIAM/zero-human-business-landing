@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Outbound Lane | Autonomous Revenue OS</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="section">
+    <div class="container">
+      <h1>Outbound Lane — 50 Targeted Contacts / Day</h1>
+      <p class="sub">Simple execution board for daily outbound discipline. Keep message quality high, track replies, and iterate scripts weekly.</p>
+
+      <div class="grid-2 cards">
+        <article class="card">
+          <h3>Daily Tracker</h3>
+          <form id="outboundForm" class="stack">
+            <label>Date <input id="ob_date" type="date" required /></label>
+            <label>Contacts sent <input id="ob_sent" type="number" min="0" max="200" value="50" required /></label>
+            <label>Positive replies <input id="ob_replies" type="number" min="0" value="0" required /></label>
+            <label>Calls booked <input id="ob_booked" type="number" min="0" value="0" required /></label>
+            <label>Notes / script variant <textarea id="ob_notes" rows="3" placeholder="ex: v2 problem-first opener"></textarea></label>
+            <button class="btn" type="submit">Save Daily Outbound Log</button>
+            <p id="ob_status" class="muted"></p>
+          </form>
+        </article>
+
+        <article class="card">
+          <h3>Live Score</h3>
+          <p id="ob_progress" class="sub">No data yet.</p>
+          <div class="progress-wrap"><div id="ob_bar" class="progress-bar"></div></div>
+          <p class="small muted">Target baseline: 50/day, 5%+ positive reply, 2%+ booked call.</p>
+          <p><a href="/templates/outbound-prospects-template.csv">Download prospect template CSV</a></p>
+          <p><a href="/kpi.html">Open KPI board</a> · <a href="/admin.html">Open leads dashboard</a></p>
+        </article>
+      </div>
+
+      <section class="section">
+        <h2>Operating Script (minimum viable)</h2>
+        <div class="panel">
+          <ol>
+            <li>Build 50 highly targeted prospects (ICP fit only).</li>
+            <li>Send one personalized first-line + one clear problem statement + one CTA.</li>
+            <li>Log replies and booked calls before end-of-day.</li>
+            <li>Run weekly review: keep winner script, retire weak script.</li>
+          </ol>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="outbound.js"></script>
+</body>
+</html>

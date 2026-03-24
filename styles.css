@@ -175,6 +175,22 @@ textarea { resize: vertical; }
   text-align: left;
 }
 .muted { color: var(--muted); }
+.small { font-size: .88rem; }
+.progress-wrap {
+  width: 100%;
+  height: 12px;
+  border-radius: 999px;
+  background: #0a1320;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  margin: .8rem 0;
+}
+.progress-bar {
+  width: 0;
+  height: 100%;
+  background: linear-gradient(95deg, var(--brand), var(--brand-2));
+  transition: width .25s ease;
+}
 
 .footer {
   border-top: 1px solid rgba(255,255,255,.06);
@@ -182,6 +198,7 @@ textarea { resize: vertical; }
   color: var(--muted);
   font-size: .92rem;
 }
+.footer a { color: #b7d6ff; }
 
 @media (max-width: 980px) {
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }

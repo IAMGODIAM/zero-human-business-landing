@@ -19,6 +19,26 @@
     {
       "route": "/api/leads",
       "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/kpi.html",
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/kpi.js",
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/outbound.html",
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/outbound.js",
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/api/kpi",
+      "allowedRoles": ["authenticated"]
     }
   ]
 }

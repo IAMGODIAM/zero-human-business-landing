@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Daily KPI Board | Autonomous Revenue OS</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="section">
+    <div class="container">
+      <h1>Daily KPI Board</h1>
+      <p class="sub">Track cash/day, booked calls, and close rate. Save one row per day.</p>
+
+      <div class="grid-2 cards">
+        <article class="card">
+          <h3>Daily Entry</h3>
+          <form id="kpiForm" class="stack">
+            <label>Admin key <input id="kpi_key" type="password" required /></label>
+            <label>Date <input id="kpi_date" type="date" required /></label>
+            <label>Cash collected today ($) <input id="kpi_cash" type="number" min="0" value="0" required /></label>
+            <label>Calls booked <input id="kpi_booked" type="number" min="0" value="0" required /></label>
+            <label>Calls held <input id="kpi_held" type="number" min="0" value="0" required /></label>
+            <label>Deals closed <input id="kpi_closed" type="number" min="0" value="0" required /></label>
+            <label>Ad/tool spend today ($) <input id="kpi_spend" type="number" min="0" value="0" required /></label>
+            <button class="btn" type="submit">Save KPI Row</button>
+            <p id="kpiStatus" class="muted"></p>
+          </form>
+        </article>
+        <article class="card">
+          <h3>Rolling Snapshot (last 14 days)</h3>
+          <div id="kpiSummary" class="sub">Load data to see snapshot.</div>
+          <button id="kpiLoadBtn" class="btn btn-ghost" type="button">Load KPI Data</button>
+        </article>
+      </div>
+
+      <section class="section">
+        <h2>Recent Entries</h2>
+        <div class="panel" style="overflow:auto;">
+          <table style="width:100%; border-collapse:collapse; min-width:900px;">
+            <thead>
+              <tr>
+                <th style="text-align:left; padding:.45rem; border-bottom:1px solid var(--border);">Date</th>
+                <th style="text-align:left; padding:.45rem; border-bottom:1px solid var(--border);">Cash</th>
+                <th style="text-align:left; padding:.45rem; border-bottom:1px solid var(--border);">Booked</th>
+                <th style="text-align:left; padding:.45rem; border-bottom:1px solid var(--border);">Held</th>
+                <th style="text-align:left; padding:.45rem; border-bottom:1px solid var(--border);">Closed</th>
+                <th style="text-align:left; padding:.45rem; border-bottom:1px solid var(--border);">Spend</th>
+                <th style="text-align:left; padding:.45rem; border-bottom:1px solid var(--border);">Close Rate (held)</th>
+              </tr>
+            </thead>
+            <tbody id="kpiRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="kpi.js"></script>
+</body>
+</html>
