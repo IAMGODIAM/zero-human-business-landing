@@ -11,8 +11,8 @@ What is included
 - styles.css: responsive design system
 - script.js: interactive logic (ROI calculator, secure lead intake, writing invoke panel)
 - api/: Azure Static Web Apps Functions backend routes
-  - /api/lead
-  - /api/invoke
+  - /api/lead (bespoke Azure Table intake + optional webhook forward)
+  - /api/invoke (secure writing proxy)
 - docs/AGENT_BUSINESS_OS.md: operating charter for autonomous business execution
 - docs/WRITING_INVOKE_SETUP.md: production integration notes for writing repo invocation
 

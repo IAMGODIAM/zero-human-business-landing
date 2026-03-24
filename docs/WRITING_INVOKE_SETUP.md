@@ -19,7 +19,9 @@ API Routes
 - Uses server-side environment variables per mode
 
 Required Azure app settings
-- LEAD_WEBHOOK_URL
+- LEADS_TABLE_CONNECTION_STRING (required for bespoke lead capture)
+- LEADS_TABLE_NAME (default inboundleads)
+- LEAD_WEBHOOK_URL (optional downstream forwarding)
 - LEAD_WEBHOOK_TOKEN (optional)
 - WRITING_WEBHOOK_URL
 - WRITING_WEBHOOK_TOKEN (optional)
@@ -37,6 +39,8 @@ az staticwebapp appsettings set \
   --name zero-human-landing \
   --resource-group nerve-center-rg \
   --setting-names \
+    LEADS_TABLE_CONNECTION_STRING='DefaultEndpointsProtocol=...;AccountName=...;AccountKey=...;EndpointSuffix=core.windows.net' \
+    LEADS_TABLE_NAME='inboundleads' \
     LEAD_WEBHOOK_URL='https://YOUR_LEAD_WEBHOOK' \
     LEAD_WEBHOOK_TOKEN='YOUR_LEAD_TOKEN' \
     WRITING_WEBHOOK_URL='https://YOUR_WRITING_WEBHOOK' \
