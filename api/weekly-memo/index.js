@@ -54,9 +54,15 @@ async function listKpiRows() {
 
   const client = TableClient.fromConnectionString(conn, tableName);
   const rows = [];
-  for await (const e of client.listEntities()) {
-    rows.push(e);
-    if (rows.length >= 1000) break;
+  try {
+    for await (const e of client.listEntities()) {
+      rows.push(e);
+      if (rows.length >= 1000) break;
+    }
+  } catch (error) {
+    const msg = String(error && error.message ? error.message : error);
+    if (msg.includes('TableNotFound')) return [];
+    throw error;
   }
   return rows;
 }
