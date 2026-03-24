@@ -54,18 +54,24 @@ async function listRows(limit = 60) {
   const client = getClient();
   const rows = [];
 
-  for await (const e of client.listEntities()) {
-    rows.push({
-      date: e.date || e.partitionKey,
-      cash: Number(e.cash || 0),
-      callsBooked: Number(e.callsBooked || 0),
-      callsHeld: Number(e.callsHeld || 0),
-      dealsClosed: Number(e.dealsClosed || 0),
-      spend: Number(e.spend || 0),
-      savedAt: e.savedAt || '',
-      id: `${e.partitionKey}/${e.rowKey}`
-    });
-    if (rows.length >= 3000) break;
+  try {
+    for await (const e of client.listEntities()) {
+      rows.push({
+        date: e.date || e.partitionKey,
+        cash: Number(e.cash || 0),
+        callsBooked: Number(e.callsBooked || 0),
+        callsHeld: Number(e.callsHeld || 0),
+        dealsClosed: Number(e.dealsClosed || 0),
+        spend: Number(e.spend || 0),
+        savedAt: e.savedAt || '',
+        id: `${e.partitionKey}/${e.rowKey}`
+      });
+      if (rows.length >= 3000) break;
+    }
+  } catch (error) {
+    const msg = String(error && error.message ? error.message : error);
+    if (msg.includes('TableNotFound')) return [];
+    throw error;
   }
 
   rows.sort((a, b) => {
