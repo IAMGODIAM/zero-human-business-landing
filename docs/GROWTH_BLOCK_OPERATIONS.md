@@ -14,8 +14,11 @@ System components
 - Public funnel: /
 - Qualification form: #qualify section on homepage
 - Lead intake backend: POST /api/lead
+- Experiment engine: 5 headline variants x 2 offer variants (deterministic assignment + URL overrides)
+- Attribution tags: exp_version, exp_headline, exp_offer, exp_combo, visitor_id stored in utm
 - Outbound discipline board: /outbound.html (authenticated)
 - KPI board: /kpi.html + /api/kpi (authenticated + x-admin-key)
+- Weekly decision memo endpoint: /api/weekly-memo (token-gated)
 - Lead dashboard: /admin.html + /api/leads
 
 Daily operating cadence (NYC timezone)
@@ -30,8 +33,9 @@ Daily operating cadence (NYC timezone)
    - Record script variant and bottleneck notes
 
 Weekly review
-- Keep: scripts with strongest booked-call rate
-- Kill: scripts below threshold for 2 consecutive weeks
+- Pull winner/loser memo from /api/weekly-memo (automated schedule enabled)
+- Keep: scripts and page variant combo with strongest weighted score (qualified leads weighted higher)
+- Kill: variants below threshold for 2 consecutive weeks
 - Test one variable at a time (headline, CTA, opener, offer framing)
 
 RL-style loop

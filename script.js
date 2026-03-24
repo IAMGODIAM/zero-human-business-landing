@@ -22,6 +22,141 @@ async function safeJson(res) {
   }
 }
 
+function hashInt(str) {
+  let h = 0;
+  const s = String(str || '');
+  for (let i = 0; i < s.length; i++) {
+    h = (h << 5) - h + s.charCodeAt(i);
+    h |= 0;
+  }
+  return Math.abs(h);
+}
+
+function getVisitorId() {
+  const key = 'aro_visitor_id_v1';
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = `v_${Math.random().toString(36).slice(2, 10)}_${Date.now().toString(36)}`;
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
+
+const HEADLINE_VARIANTS = [
+  {
+    id: 'h1',
+    headline: 'Build an agent-run business engine that scales lead-to-cash without scaling headcount.',
+    subline: 'We deploy your full operating stack: market intelligence, automated demand generation, qualification, conversion workflows, client onboarding, KPI reporting, and exception-only escalation.'
+  },
+  {
+    id: 'h2',
+    headline: 'Turn your service business into a daily cash machine with autonomous lead-to-close operations.',
+    subline: 'Deploy a founder-controlled AI operating system that captures demand, qualifies buyers, and drives booked calls without operational chaos.'
+  },
+  {
+    id: 'h3',
+    headline: 'Install a revenue OS that compounds booked calls, close rate, and net cash every week.',
+    subline: 'We combine outbound discipline, qualification logic, and KPI-driven optimization into one execution stack with clear escalation gates.'
+  },
+  {
+    id: 'h4',
+    headline: 'From fragmented hustle to systemized growth: launch your autonomous business stack in days.',
+    subline: 'Get production-ready capture, follow-up, and reporting lanes designed for founder-led teams that need speed and control.'
+  },
+  {
+    id: 'h5',
+    headline: 'Stop leaking revenue: deploy an AI-guided operating system that converts intent into cashflow.',
+    subline: 'We build the infrastructure for qualified bookings, tight follow-up loops, and measurable cash/day improvement.'
+  }
+];
+
+const OFFER_VARIANTS = [
+  {
+    id: 'o1',
+    title: 'Operator',
+    price: '$6,000 setup + $900/mo',
+    points: ['Full lead-to-cash system', 'Research + strategy cadence', 'Optimization loop']
+  },
+  {
+    id: 'o2',
+    title: 'Performance Sprint',
+    price: '$3,500 setup + $1,500/mo',
+    points: ['Qualification + booking acceleration', 'Daily outbound execution board', 'Weekly winner/loser optimization memo']
+  }
+];
+
+function getExperimentAssignment() {
+  const p = new URLSearchParams(window.location.search);
+  const forcedH = Number(p.get('h'));
+  const forcedO = Number(p.get('o'));
+
+  const visitorId = getVisitorId();
+  const seedSource = `${visitorId}|${p.get('utm_source') || ''}|${p.get('utm_campaign') || ''}`;
+  const hSeed = hashInt(`${seedSource}|headline`);
+  const oSeed = hashInt(`${seedSource}|offer`);
+
+  const hIndex = Number.isInteger(forcedH) && forcedH >= 1 && forcedH <= HEADLINE_VARIANTS.length
+    ? forcedH - 1
+    : hSeed % HEADLINE_VARIANTS.length;
+  const oIndex = Number.isInteger(forcedO) && forcedO >= 1 && forcedO <= OFFER_VARIANTS.length
+    ? forcedO - 1
+    : oSeed % OFFER_VARIANTS.length;
+
+  const h = HEADLINE_VARIANTS[hIndex];
+  const o = OFFER_VARIANTS[oIndex];
+
+  return {
+    version: 'b2-v1',
+    visitorId,
+    hIndex,
+    oIndex,
+    headlineId: h.id,
+    offerId: o.id,
+    comboId: `${h.id}-${o.id}`,
+    headline: h,
+    offer: o,
+    forced: Number.isInteger(forcedH) || Number.isInteger(forcedO)
+  };
+}
+
+function applyExperimentToPage(exp) {
+  const headlineEl = document.getElementById('heroHeadline');
+  const sublineEl = document.getElementById('heroSubline');
+  const badgeEl = document.getElementById('expBadge');
+  const offerTitleEl = document.getElementById('offerVariantTitle');
+  const offerPriceEl = document.getElementById('offerVariantPrice');
+  const offerPointsEl = document.getElementById('offerVariantPoints');
+
+  if (headlineEl) headlineEl.textContent = exp.headline.headline;
+  if (sublineEl) sublineEl.textContent = exp.headline.subline;
+  if (badgeEl) badgeEl.textContent = `Experiment ${exp.comboId.toUpperCase()} (${exp.version})${exp.forced ? ' • forced via URL' : ''}`;
+
+  if (offerTitleEl) offerTitleEl.textContent = exp.offer.title;
+  if (offerPriceEl) offerPriceEl.textContent = exp.offer.price;
+  if (offerPointsEl) {
+    offerPointsEl.innerHTML = exp.offer.points.map((p) => `<li>${p}</li>`).join('');
+  }
+}
+
+const EXPERIMENT = getExperimentAssignment();
+applyExperimentToPage(EXPERIMENT);
+
+function attributionTags() {
+  const p = new URLSearchParams(window.location.search);
+  return {
+    ...getUTM(),
+    exp_version: EXPERIMENT.version,
+    exp_headline: EXPERIMENT.headlineId,
+    exp_offer: EXPERIMENT.offerId,
+    exp_combo: EXPERIMENT.comboId,
+    exp_forced: String(EXPERIMENT.forced),
+    visitor_id: EXPERIMENT.visitorId,
+    referrer: document.referrer || '',
+    landing_path: window.location.pathname,
+    landing_query: p.toString()
+  };
+}
+
 const roiForm = document.getElementById('roiForm');
 const roiOutput = document.getElementById('roiOutput');
 
@@ -60,9 +195,9 @@ leadForm?.addEventListener('submit', async (e) => {
     company: document.getElementById('company').value,
     target: document.getElementById('target').value,
     stack: document.getElementById('stack').value,
-    utm: getUTM(),
+    utm: attributionTags(),
     submittedAt: new Date().toISOString(),
-    source: 'zero-human-business-landing'
+    source: `zero-human-business-landing|${EXPERIMENT.comboId}`
   };
 
   leadStatus.textContent = 'Submitting build request...';
@@ -105,11 +240,17 @@ qualForm?.addEventListener('submit', async (e) => {
       form: 'qualification',
       monthlyRevenue: Number(document.getElementById('q_revenue').value || 0),
       bottleneck: document.getElementById('q_bottleneck').value,
-      canStartIn7Days: document.getElementById('q_start').value
+      canStartIn7Days: document.getElementById('q_start').value,
+      experiment: {
+        version: EXPERIMENT.version,
+        headlineId: EXPERIMENT.headlineId,
+        offerId: EXPERIMENT.offerId,
+        comboId: EXPERIMENT.comboId
+      }
     }),
-    utm: getUTM(),
+    utm: attributionTags(),
     submittedAt: new Date().toISOString(),
-    source: 'strategy-call-qualification'
+    source: `strategy-call-qualification|${EXPERIMENT.comboId}`
   };
 
   qualStatus.textContent = 'Submitting qualification...';

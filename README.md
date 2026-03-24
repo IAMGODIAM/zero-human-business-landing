@@ -9,7 +9,7 @@ Repository
 What is included
 - index.html: advanced one-page site for agent-run business offer (includes qualification call form)
 - styles.css: responsive design system
-- script.js: interactive logic (ROI calculator, secure lead intake, qualification intake, writing invoke panel)
+- script.js: interactive logic (ROI calculator, 5x2 experiment assignment, attribution tagging, secure lead + qualification intake, writing invoke panel)
 - outbound.html + outbound.js: authenticated outbound lane tracker (50 contacts/day discipline)
 - kpi.html + kpi.js: authenticated KPI board for cash/day and conversion metrics
 - api/: Azure Static Web Apps Functions backend routes
@@ -17,6 +17,7 @@ What is included
   - /api/leads (admin-only lead listing endpoint)
   - /api/kpi (admin-only KPI entry/list endpoint)
   - /api/invoke (secure writing proxy)
+  - /api/weekly-memo (token-gated weekly winner/loser decision memo)
 - admin.html + admin.js: secure lead dashboard and CSV export
 - staticwebapp.config.json: route protection + security headers
 - docs/AGENT_BUSINESS_OS.md: operating charter for autonomous business execution
