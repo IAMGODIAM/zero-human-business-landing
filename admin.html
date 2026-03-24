@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Lead Admin | Autonomous Revenue OS</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body { background: #070b12; }
+    .admin-wrap { width: min(1180px, 94vw); margin: 2rem auto; }
+    .toolbar { display:grid; grid-template-columns: 1.5fr 1fr 1fr auto auto; gap:.6rem; margin-bottom: .8rem; }
+    .table-wrap { overflow:auto; border:1px solid var(--border); border-radius: 12px; }
+    table { width:100%; border-collapse: collapse; min-width: 1000px; }
+    th, td { padding: .55rem .6rem; border-bottom:1px solid #1f2e44; text-align:left; vertical-align: top; }
+    th { background:#0f1929; position: sticky; top: 0; }
+    .small { color: var(--muted); font-size: .88rem; }
+    .status { margin:.5rem 0 1rem; color: var(--muted); }
+    .pill { display:inline-block; padding:.12rem .5rem; border:1px solid #284562; border-radius:999px; font-size:.78rem; color:#bcd8f7; }
+  </style>
+</head>
+<body>
+  <div class="admin-wrap">
+    <h1>Lead Intake Dashboard</h1>
+    <p class="small">Secure view for inbound leads stored in Azure Table.</p>
+
+    <div class="toolbar">
+      <input id="adminKey" type="password" placeholder="Admin key" />
+      <input id="emailFilter" placeholder="Filter email contains..." />
+      <input id="sourceFilter" placeholder="Filter source contains..." />
+      <button id="loadBtn" class="btn">Load Leads</button>
+      <button id="csvBtn" class="btn btn-ghost">Export CSV</button>
+    </div>
+
+    <p id="status" class="status">Idle.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Received</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Company</th>
+            <th>Target</th>
+            <th>Source</th>
+            <th>UTM</th>
+            <th>Stack</th>
+            <th>ID</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

@@ -11,20 +11,22 @@ What is included
 - styles.css: responsive design system
 - script.js: interactive logic (ROI calculator, secure lead intake, writing invoke panel)
 - api/: Azure Static Web Apps Functions backend routes
-  - /api/lead (bespoke Azure Table intake + optional webhook forward)
+  - /api/lead (bespoke Azure Table intake + optional webhook forward + optional Telegram alert)
+  - /api/leads (admin-only lead listing endpoint)
   - /api/invoke (secure writing proxy)
+- admin.html + admin.js: secure lead dashboard and CSV export
 - docs/AGENT_BUSINESS_OS.md: operating charter for autonomous business execution
 - docs/WRITING_INVOKE_SETUP.md: production integration notes for writing repo invocation
+- docs/LEAD_OPERATIONS.md: lead storage/admin/alert operations guide
 
-Advanced features in v2
+Advanced features
 1) 30-day Agent Business OS rollout section
 2) ROI forecaster with instant monthly impact estimate
-3) Built-in Writing Engine Invoke panel:
-   - Generic webhook mode
-   - OpenAI-compatible mode
-   - Architect's Voice tRPC mode
-4) Lead capture form with UTM preservation and build request draft flow
-5) Improved navigation, KPI strip, and structured conversion architecture
+3) Built-in Writing Engine Invoke panel via secure backend proxy
+4) Lead capture form with UTM preservation and Azure Table persistence
+5) Admin lead dashboard (/admin.html) with filter + CSV export
+6) Optional Telegram notifications for new lead events
+7) Improved navigation, KPI strip, and structured conversion architecture
 
 Local preview
 - Open index.html directly in browser

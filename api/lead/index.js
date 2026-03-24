@@ -29,7 +29,7 @@ async function storeInTable(payload) {
 
   const ts = Date.now();
   const rowKey = `${ts}-${Math.random().toString(36).slice(2, 10)}`;
-  const partitionKey = new Date().toISOString().slice(0, 10); // yyyy-mm-dd
+  const partitionKey = new Date().toISOString().slice(0, 10);
 
   const entity = {
     partitionKey,
@@ -47,7 +47,13 @@ async function storeInTable(payload) {
   };
 
   await client.createEntity(entity);
-  return { leadId: `${partitionKey}/${rowKey}` };
+
+  return {
+    leadId: `${partitionKey}/${rowKey}`,
+    partitionKey,
+    rowKey,
+    receivedAt: entity.receivedAt
+  };
 }
 
 async function forwardToWebhook(payload) {
@@ -79,6 +85,47 @@ async function forwardToWebhook(payload) {
   return { forwarded: true };
 }
 
+async function notifyTelegram(payload, stored) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  const threadId = process.env.TELEGRAM_THREAD_ID;
+
+  if (!token || !chatId) {
+    return { notified: false, reason: 'telegram_not_configured' };
+  }
+
+  const lines = [
+    'New Lead Captured',
+    `Name: ${sanitize(payload.name, 120) || '-'}`,
+    `Email: ${sanitize(payload.email, 200) || '-'}`,
+    `Company: ${sanitize(payload.company, 120) || '-'}`,
+    `Target: ${sanitize(payload.target, 120) || '-'}`,
+    `Source: ${sanitize(payload.source, 120) || '-'}`,
+    `Lead ID: ${stored.leadId}`,
+    `Received: ${stored.receivedAt}`
+  ];
+
+  const body = {
+    chat_id: chatId,
+    text: lines.join('\n'),
+    disable_web_page_preview: true
+  };
+  if (threadId) body.message_thread_id = Number(threadId);
+
+  const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`telegram failure ${res.status}: ${text.slice(0, 500)}`);
+  }
+
+  return { notified: true };
+}
+
 module.exports = async function (context, req) {
   try {
     const payload = req.body || {};
@@ -95,12 +142,20 @@ module.exports = async function (context, req) {
       context.log.warn('lead webhook forward failed; stored locally', forwardError.message);
     }
 
+    let telegramState = { notified: false };
+    try {
+      telegramState = await notifyTelegram(payload, stored);
+    } catch (telegramError) {
+      context.log.warn('telegram notify failed', telegramError.message);
+    }
+
     return json(200, {
       ok: true,
       message: 'lead accepted',
       storage: 'azure-table',
       leadId: stored.leadId,
-      forwarded: forwardState.forwarded
+      forwarded: forwardState.forwarded,
+      telegram: telegramState.notified
     });
   } catch (error) {
     context.log.error('lead handler error', error);
