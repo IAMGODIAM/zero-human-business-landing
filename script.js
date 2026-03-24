@@ -13,6 +13,15 @@ function getUTM() {
   return out;
 }
 
+async function safeJson(res) {
+  const text = await res.text();
+  try {
+    return { ok: true, data: JSON.parse(text), raw: text };
+  } catch {
+    return { ok: false, data: null, raw: text };
+  }
+}
+
 const roiForm = document.getElementById('roiForm');
 const roiOutput = document.getElementById('roiOutput');
 
@@ -53,107 +62,63 @@ leadForm?.addEventListener('submit', async (e) => {
     stack: document.getElementById('stack').value,
     utm: getUTM(),
     submittedAt: new Date().toISOString(),
+    source: 'zero-human-business-landing'
   };
 
-  const fallbackBody = encodeURIComponent(JSON.stringify(payload, null, 2));
-  const mailto = `mailto:israel@e5enclave.com?subject=Agent%20OS%20Build%20Request&body=${fallbackBody}`;
+  leadStatus.textContent = 'Submitting build request...';
 
-  leadStatus.textContent = 'Build request prepared. Opening email draft...';
-  window.location.href = mailto;
+  try {
+    const res = await fetch('/api/lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const parsed = await safeJson(res);
+    if (!res.ok) {
+      throw new Error(parsed.raw || `HTTP ${res.status}`);
+    }
+
+    leadStatus.textContent = 'Build request submitted successfully. We will follow up shortly.';
+    leadForm.reset();
+    return;
+  } catch (err) {
+    const fallbackBody = encodeURIComponent(JSON.stringify(payload, null, 2));
+    const mailto = `mailto:israel@e5enclave.com?subject=Agent%20OS%20Build%20Request&body=${fallbackBody}`;
+    leadStatus.textContent = `API not available (${err.message}). Opening email fallback...`;
+    window.location.href = mailto;
+  }
 });
 
 const invokeForm = document.getElementById('invokeForm');
 const invokeOutput = document.getElementById('invokeOutput');
 
-function parseArchitectsResponse(json) {
-  if (json?.[0]?.result?.data?.json?.generatedText) return json[0].result.data.json.generatedText;
-  if (json?.result?.data?.json?.generatedText) return json.result.data.json.generatedText;
-  if (json?.generatedText) return json.generatedText;
-  return JSON.stringify(json, null, 2);
-}
-
 invokeForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
 
   const mode = document.getElementById('invokeMode').value;
-  const endpoint = document.getElementById('invokeEndpoint').value.trim();
-  const token = document.getElementById('invokeToken').value.trim();
+  const profile = document.getElementById('invokeProfile').value;
   const docType = document.getElementById('docType').value.trim();
   const topic = document.getElementById('topic').value.trim();
   const keyPoints = document.getElementById('keyPoints').value.trim();
 
-  if (!endpoint) {
-    invokeOutput.textContent = 'Add an endpoint URL first.';
-    return;
-  }
-
-  let url = endpoint;
-  let body = null;
-  const headers = { 'Content-Type': 'application/json' };
-  if (token) headers.Authorization = `Bearer ${token}`;
-
-  if (mode === 'openai') {
-    body = {
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: 'You are a conversion copywriter for AI automation services.' },
-        { role: 'user', content: `Document type: ${docType}\nTopic: ${topic}\nKey points: ${keyPoints}` }
-      ]
-    };
-  } else if (mode === 'architects') {
-    if (!url.includes('/api/trpc/generate.submit')) {
-      url = url.replace(/\/$/, '') + '/api/trpc/generate.submit?batch=1';
-    }
-    body = {
-      0: {
-        json: {
-          documentType: docType || 'sales-letter',
-          topic,
-          keyPoints,
-          tone: 'urgent_and_motivational'
-        }
-      }
-    };
-  } else {
-    body = {
-      task: 'write_asset',
-      documentType: docType,
-      topic,
-      keyPoints,
-      source: 'zero-human-business-landing'
-    };
-  }
-
-  invokeOutput.textContent = 'Invoking...';
+  invokeOutput.textContent = 'Invoking secure backend...';
 
   try {
-    const res = await fetch(url, {
+    const res = await fetch('/api/invoke', {
       method: 'POST',
-      headers,
-      body: JSON.stringify(body),
-      credentials: mode === 'architects' ? 'include' : 'same-origin'
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode, profile, docType, topic, keyPoints })
     });
 
-    const text = await res.text();
-    let json = null;
-    try { json = JSON.parse(text); } catch {}
-
+    const parsed = await safeJson(res);
     if (!res.ok) {
-      invokeOutput.textContent = `Invoke failed (${res.status})\n\n${text}`;
+      invokeOutput.textContent = `Invoke failed (${res.status})\n\n${parsed.raw}`;
       return;
     }
 
-    if (mode === 'openai' && json?.choices?.[0]?.message?.content) {
-      invokeOutput.textContent = json.choices[0].message.content;
-      return;
-    }
-
-    if (mode === 'architects') {
-      invokeOutput.textContent = parseArchitectsResponse(json);
-      return;
-    }
-
-    invokeOutput.textContent = json ? JSON.stringify(json, null, 2) : text;
+    const output = parsed.data?.output || parsed.data?.text || parsed.raw;
+    invokeOutput.textContent = typeof output === 'string' ? output : JSON.stringify(output, null, 2);
   } catch (err) {
     invokeOutput.textContent = `Invoke error: ${err.message}`;
   }

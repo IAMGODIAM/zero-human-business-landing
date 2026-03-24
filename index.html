@@ -133,13 +133,16 @@
             <form id="invokeForm" class="stack">
               <label>Mode
                 <select id="invokeMode">
-                  <option value="webhook">Generic Webhook</option>
-                  <option value="openai">OpenAI-Compatible /chat/completions</option>
-                  <option value="architects">Architect's Voice (tRPC)</option>
+                  <option value="webhook">Production Webhook Lane</option>
+                  <option value="openai">OpenAI-Compatible Lane</option>
+                  <option value="architects">Architect's Voice Lane</option>
                 </select>
               </label>
-              <label>Endpoint URL <input id="invokeEndpoint" placeholder="https://..." /></label>
-              <label>Bearer token (optional) <input id="invokeToken" type="password" placeholder="token" /></label>
+              <label>Profile
+                <select id="invokeProfile">
+                  <option value="default">default</option>
+                </select>
+              </label>
               <label>Document type <input id="docType" value="sales-letter" /></label>
               <label>Topic / prompt <textarea id="topic" rows="4">Write a conversion-focused outbound email sequence for a zero-human automation offer.</textarea></label>
               <label>Key points <textarea id="keyPoints" rows="4">Founder control, fast deployment, exception-only escalation, measurable ROI.</textarea></label>

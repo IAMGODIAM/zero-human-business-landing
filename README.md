@@ -9,9 +9,12 @@ Repository
 What is included
 - index.html: advanced one-page site for agent-run business offer
 - styles.css: responsive design system
-- script.js: interactive logic (ROI calculator, lead intake handling, writing invoke panel)
+- script.js: interactive logic (ROI calculator, secure lead intake, writing invoke panel)
+- api/: Azure Static Web Apps Functions backend routes
+  - /api/lead
+  - /api/invoke
 - docs/AGENT_BUSINESS_OS.md: operating charter for autonomous business execution
-- docs/WRITING_INVOKE_SETUP.md: integration notes for writing repo invocation
+- docs/WRITING_INVOKE_SETUP.md: production integration notes for writing repo invocation
 
 Advanced features in v2
 1) 30-day Agent Business OS rollout section
@@ -32,6 +35,8 @@ or
 Deployment (Azure Static Web Apps)
 - Connected to GitHub main branch via Actions workflow.
 - Every push to main auto-deploys.
+- API routes in /api are deployed with the site.
+- Configure production secrets via `az staticwebapp appsettings set` (see docs/WRITING_INVOKE_SETUP.md).
 
 Quick customization checklist
 - Replace brand + contact email

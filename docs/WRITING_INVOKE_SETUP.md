@@ -1,37 +1,55 @@
-Writing Invoke Setup
+Writing Invoke Setup (Production)
 
 Purpose
-- Connect this landing page's "Writing Engine Invoke" panel to a writing service/repo endpoint.
+- Connect the landing page to secure backend API routes so secrets stay server-side.
 
-Supported modes
-1) Generic Webhook
-- Expects POST JSON payload
-- Use this when your writing repo exposes a custom webhook endpoint
+Architecture
+- Frontend calls same-origin routes:
+  - POST /api/lead
+  - POST /api/invoke
+- Azure Static Web Apps Functions forward requests to configured upstream services.
 
-2) OpenAI-Compatible
-- Expects POST /v1/chat/completions schema
-- Returns text from choices[0].message.content
+API Routes
+1) /api/lead
+- Forwards lead payload to LEAD_WEBHOOK_URL
+- Optional auth header via LEAD_WEBHOOK_TOKEN
 
-3) Architect's Voice (tRPC)
-- Attempts POST to /api/trpc/generate.submit?batch=1
-- Payload shape:
-  {
-    "0": {
-      "json": {
-        "documentType": "sales-letter",
-        "topic": "...",
-        "keyPoints": "...",
-        "tone": "urgent_and_motivational"
-      }
-    }
-  }
+2) /api/invoke
+- Supports modes: webhook, openai, architects
+- Uses server-side environment variables per mode
 
-Notes for Architect's Voice
-- May require authenticated browser session/cookie.
-- If CORS blocks requests, proxy through a backend endpoint under the same domain.
-- If procedure naming changes, update script.js mode=architects block.
+Required Azure app settings
+- LEAD_WEBHOOK_URL
+- LEAD_WEBHOOK_TOKEN (optional)
+- WRITING_WEBHOOK_URL
+- WRITING_WEBHOOK_TOKEN (optional)
+- WRITING_OPENAI_PROVIDER (openai|azure)
+- WRITING_OPENAI_URL
+- WRITING_OPENAI_TOKEN
+- WRITING_OPENAI_MODEL (optional, openai mode only)
+- WRITING_OPENAI_DEPLOYMENT (azure mode only)
+- WRITING_OPENAI_API_VERSION (azure mode only)
+- WRITING_ARCHITECTS_URL
+- WRITING_ARCHITECTS_TOKEN (optional)
 
-Production recommendation
-- Do not expose private API keys in frontend.
-- Place secure invoke endpoint behind server middleware.
-- Use short-lived tokens and audit logs.
+Set settings (example)
+az staticwebapp appsettings set \
+  --name zero-human-landing \
+  --resource-group nerve-center-rg \
+  --setting-names \
+    LEAD_WEBHOOK_URL='https://YOUR_LEAD_WEBHOOK' \
+    LEAD_WEBHOOK_TOKEN='YOUR_LEAD_TOKEN' \
+    WRITING_WEBHOOK_URL='https://YOUR_WRITING_WEBHOOK' \
+    WRITING_WEBHOOK_TOKEN='YOUR_WRITING_WEBHOOK_TOKEN' \
+    WRITING_OPENAI_PROVIDER='azure' \
+    WRITING_OPENAI_URL='https://YOUR_AZURE_OPENAI_RESOURCE.openai.azure.com' \
+    WRITING_OPENAI_TOKEN='YOUR_AZURE_OPENAI_KEY' \
+    WRITING_OPENAI_DEPLOYMENT='gpt-4o' \
+    WRITING_OPENAI_API_VERSION='2024-10-21' \
+    WRITING_ARCHITECTS_URL='https://YOUR_ARCHITECTS_VOICE_BASE' \
+    WRITING_ARCHITECTS_TOKEN='YOUR_ARCHITECTS_TOKEN'
+
+Notes
+- If architects endpoint requires cookie-auth, use a service token or backend adapter.
+- Do not put private keys in frontend fields.
+- If an upstream endpoint is not configured, API returns 503 with mode-specific message.
