@@ -9,8 +9,9 @@ Overview
 - Optional real-time alerts: Telegram bot sendMessage
 
 Security model
-- /api/lead is anonymous (public form submission).
-- /api/leads requires header x-admin-key matching ADMIN_DASHBOARD_KEY.
+- /api/lead is anonymous for public forms, with optional HMAC signature verification controls.
+- /admin.html and /api/leads are restricted to SWA authenticated users via staticwebapp.config.json.
+- /api/leads also requires header x-admin-key matching ADMIN_DASHBOARD_KEY (defense in depth).
 - Admin key is never embedded in frontend source.
 - Admin enters key at runtime in /admin.html.
 
@@ -22,6 +23,9 @@ Required app settings
 Optional app settings
 - LEAD_WEBHOOK_URL
 - LEAD_WEBHOOK_TOKEN
+- LEAD_SIGNATURE_MODE (off|optional|required; default optional)
+- LEAD_SIGNATURE_SECRET (required if mode is optional/required)
+- LEAD_SIGNATURE_TOLERANCE_SEC (default 300)
 - TELEGRAM_BOT_TOKEN
 - TELEGRAM_CHAT_ID
 - TELEGRAM_THREAD_ID (optional Telegram topic/thread)
@@ -41,6 +45,9 @@ az staticwebapp appsettings set \
   --resource-group nerve-center-rg \
   --setting-names \
     ADMIN_DASHBOARD_KEY='YOUR_STRONG_KEY' \
+    LEAD_SIGNATURE_MODE='optional' \
+    LEAD_SIGNATURE_SECRET='YOUR_HMAC_SECRET' \
+    LEAD_SIGNATURE_TOLERANCE_SEC='300' \
     TELEGRAM_BOT_TOKEN='123456:ABC...' \
     TELEGRAM_CHAT_ID='-1001234567890' \
     TELEGRAM_THREAD_ID='17585'
@@ -52,7 +59,15 @@ Admin usage
 4) Filter by email/source
 5) Export CSV when needed
 
+Signature format (when using signed submissions)
+- Headers:
+  - x-lead-timestamp: unix epoch seconds
+  - x-lead-signature: sha256=<hex_hmac>
+- HMAC base string:
+  - `${timestamp}.${JSON.stringify(sorted_payload)}`
+- Algorithm: HMAC-SHA256 with LEAD_SIGNATURE_SECRET
+
 Operational notes
-- Lead is always persisted to table first.
+- Lead is always persisted to table first after signature gate passes.
 - Webhook and Telegram failures do not block lead acceptance.
-- API response includes forwarded and telegram booleans for diagnostics.
+- API response includes forwarded, telegram, and signed booleans for diagnostics.

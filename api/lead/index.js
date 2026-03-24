@@ -1,4 +1,5 @@
 const { TableClient } = require('@azure/data-tables');
+const crypto = require('crypto');
 
 function json(status, body) {
   return {
@@ -16,7 +17,76 @@ function nowIso() {
   return new Date().toISOString();
 }
 
-async function storeInTable(payload) {
+function sortObjectDeep(value) {
+  if (Array.isArray(value)) return value.map(sortObjectDeep);
+  if (value && typeof value === 'object') {
+    const out = {};
+    for (const k of Object.keys(value).sort()) out[k] = sortObjectDeep(value[k]);
+    return out;
+  }
+  return value;
+}
+
+function timingSafeEqualHex(a, b) {
+  try {
+    const ba = Buffer.from(a, 'hex');
+    const bb = Buffer.from(b, 'hex');
+    if (ba.length !== bb.length) return false;
+    return crypto.timingSafeEqual(ba, bb);
+  } catch {
+    return false;
+  }
+}
+
+function getHeader(req, name) {
+  const headers = req.headers || {};
+  return headers[name] || headers[name.toLowerCase()] || headers[name.toUpperCase()];
+}
+
+function verifyLeadSignature(req, payload) {
+  const mode = (process.env.LEAD_SIGNATURE_MODE || 'optional').toLowerCase();
+  const secret = process.env.LEAD_SIGNATURE_SECRET;
+
+  if (!secret || mode === 'off') {
+    return { ok: true, signed: false, reason: 'signature_off' };
+  }
+
+  const timestamp = String(getHeader(req, 'x-lead-timestamp') || '').trim();
+  const signature = String(getHeader(req, 'x-lead-signature') || '').trim();
+
+  const hasSignatureHeaders = Boolean(timestamp && signature);
+  if (!hasSignatureHeaders && mode === 'optional') {
+    return { ok: true, signed: false, reason: 'signature_optional_missing' };
+  }
+
+  if (!hasSignatureHeaders) {
+    return { ok: false, reason: 'signature_required_missing' };
+  }
+
+  const ts = Number(timestamp);
+  if (!Number.isFinite(ts)) {
+    return { ok: false, reason: 'signature_invalid_timestamp' };
+  }
+
+  const toleranceSec = Math.max(Number(process.env.LEAD_SIGNATURE_TOLERANCE_SEC || 300), 30);
+  const nowSec = Math.floor(Date.now() / 1000);
+  if (Math.abs(nowSec - ts) > toleranceSec) {
+    return { ok: false, reason: 'signature_timestamp_out_of_range' };
+  }
+
+  const normalizedPayload = JSON.stringify(sortObjectDeep(payload || {}));
+  const base = `${timestamp}.${normalizedPayload}`;
+  const expectedHex = crypto.createHmac('sha256', secret).update(base).digest('hex');
+
+  const givenHex = signature.replace(/^sha256=/i, '');
+  if (!timingSafeEqualHex(expectedHex, givenHex)) {
+    return { ok: false, reason: 'signature_mismatch' };
+  }
+
+  return { ok: true, signed: true, reason: 'signature_valid' };
+}
+
+async function storeInTable(payload, meta = {}) {
   const conn = process.env.LEADS_TABLE_CONNECTION_STRING;
   const tableName = process.env.LEADS_TABLE_NAME || 'inboundleads';
 
@@ -43,7 +113,8 @@ async function storeInTable(payload) {
     source: sanitize(payload.source, 120),
     submittedAt: sanitize(payload.submittedAt, 40) || nowIso(),
     receivedAt: nowIso(),
-    lane: 'agent-os-lead-table'
+    lane: 'agent-os-lead-table',
+    signatureStatus: sanitize(meta.signatureStatus || 'unknown', 120)
   };
 
   await client.createEntity(entity);
@@ -133,7 +204,12 @@ module.exports = async function (context, req) {
       return json(400, { ok: false, error: 'name, email, and stack are required' });
     }
 
-    const stored = await storeInTable(payload);
+    const sig = verifyLeadSignature(req, payload);
+    if (!sig.ok) {
+      return json(401, { ok: false, error: sig.reason });
+    }
+
+    const stored = await storeInTable(payload, { signatureStatus: sig.reason });
 
     let forwardState = { forwarded: false };
     try {
@@ -155,7 +231,8 @@ module.exports = async function (context, req) {
       storage: 'azure-table',
       leadId: stored.leadId,
       forwarded: forwardState.forwarded,
-      telegram: telegramState.notified
+      telegram: telegramState.notified,
+      signed: sig.signed
     });
   } catch (error) {
     context.log.error('lead handler error', error);

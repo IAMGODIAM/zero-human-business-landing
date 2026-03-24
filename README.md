@@ -15,6 +15,7 @@ What is included
   - /api/leads (admin-only lead listing endpoint)
   - /api/invoke (secure writing proxy)
 - admin.html + admin.js: secure lead dashboard and CSV export
+- staticwebapp.config.json: route protection + security headers
 - docs/AGENT_BUSINESS_OS.md: operating charter for autonomous business execution
 - docs/WRITING_INVOKE_SETUP.md: production integration notes for writing repo invocation
 - docs/LEAD_OPERATIONS.md: lead storage/admin/alert operations guide
