@@ -24,6 +24,8 @@ What is included
 - docs/WRITING_INVOKE_SETUP.md: production integration notes for writing repo invocation
 - docs/LEAD_OPERATIONS.md: lead storage/admin/alert operations guide
 - docs/GROWTH_BLOCK_OPERATIONS.md: daily growth operating cadence toward $1k/day
+- docs/CHANNEL_SWARM_BLOCK3.md: multi-channel swarm operating charter (LinkedIn/email/X/referral)
+- docs/templates/: LinkedIn post bank, email outbound scripts, and channel scorecard template
 
 Advanced features
 1) 30-day Agent Business OS rollout section
