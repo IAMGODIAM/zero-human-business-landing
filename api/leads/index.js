@@ -42,6 +42,10 @@ module.exports = async function (context, req) {
         target: e.target || '',
         stack: e.stack || '',
         source: e.source || '',
+        formType: e.formType || 'general',
+        priority: e.priority || 'nurture',
+        fitScore: Number.isFinite(Number(e.fitScore)) ? Number(e.fitScore) : 0,
+        responseSlaMinutes: Number.isFinite(Number(e.responseSlaMinutes)) ? Number(e.responseSlaMinutes) : 240,
         receivedAt: e.receivedAt || '',
         submittedAt: e.submittedAt || '',
         utm: (() => {

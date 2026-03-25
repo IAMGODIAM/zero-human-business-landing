@@ -18,7 +18,7 @@ function asDate(v) {
 }
 
 function toCsv(rows) {
-  const headers = ['receivedAt','name','email','company','target','source','utm','stack','leadId'];
+  const headers = ['receivedAt','priority','fitScore','responseSlaMinutes','name','email','company','target','source','formType','utm','stack','leadId'];
   const esc = (x) => `"${String(x || '').replaceAll('"', '""')}"`;
   const lines = [headers.join(',')];
   for (const r of rows) {
@@ -61,18 +61,22 @@ async function loadLeads() {
     const rows = latestLeads.map((r) => `
       <tr>
         <td>${escapeHtml(asDate(r.receivedAt))}</td>
+        <td><span class="pill">${escapeHtml(String(r.priority || 'nurture').toUpperCase())}</span></td>
+        <td>${escapeHtml(String(r.fitScore ?? 0))}</td>
+        <td>${escapeHtml(String(r.responseSlaMinutes ?? 240))}</td>
         <td>${escapeHtml(r.name)}</td>
         <td>${escapeHtml(r.email)}</td>
         <td>${escapeHtml(r.company)}</td>
         <td>${escapeHtml(r.target)}</td>
         <td><span class="pill">${escapeHtml(r.source || '-')}</span></td>
+        <td>${escapeHtml(r.formType || 'general')}</td>
         <td class="small">${escapeHtml(JSON.stringify(r.utm || {}))}</td>
         <td class="small">${escapeHtml(r.stack)}</td>
         <td class="small">${escapeHtml(r.leadId)}</td>
       </tr>
     `).join('');
 
-    $('rows').innerHTML = rows || '<tr><td colspan="9">No leads found.</td></tr>';
+    $('rows').innerHTML = rows || '<tr><td colspan="13">No leads found.</td></tr>';
     status.textContent = `Loaded ${latestLeads.length} leads.`;
     localStorage.setItem('lead_admin_key', key);
   } catch (err) {

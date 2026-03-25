@@ -17,6 +17,51 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+function toInt(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? Math.round(n) : fallback;
+}
+
+function parseStackJson(payload) {
+  try {
+    return JSON.parse(payload?.stack || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function deriveLeadRouting(payload) {
+  const profile = parseStackJson(payload);
+  const formType = sanitize(payload.formType || profile.form || 'general', 40);
+
+  const sourceScore = toInt(payload.fitScore, NaN);
+  const profileScore = toInt(profile.fitScore, NaN);
+  const fitScore = Number.isFinite(sourceScore)
+    ? Math.max(0, Math.min(100, sourceScore))
+    : (Number.isFinite(profileScore) ? Math.max(0, Math.min(100, profileScore)) : 0);
+
+  const sourcePriority = sanitize(payload.priority || profile.priority || '', 20).toLowerCase();
+  let priority = sourcePriority;
+  if (!priority) {
+    if (fitScore >= 75) priority = 'hot';
+    else if (fitScore >= 55) priority = 'warm';
+    else priority = 'nurture';
+  }
+
+  const sourceSla = toInt(payload.responseSlaMinutes, NaN);
+  const profileSla = toInt(profile.responseSlaMinutes, NaN);
+  const responseSlaMinutes = Number.isFinite(sourceSla)
+    ? sourceSla
+    : (Number.isFinite(profileSla) ? profileSla : (priority === 'hot' ? 15 : priority === 'warm' ? 60 : 240));
+
+  return {
+    formType,
+    fitScore,
+    priority,
+    responseSlaMinutes: Math.max(5, Math.min(1440, responseSlaMinutes))
+  };
+}
+
 function sortObjectDeep(value) {
   if (Array.isArray(value)) return value.map(sortObjectDeep);
   if (value && typeof value === 'object') {
@@ -86,7 +131,7 @@ function verifyLeadSignature(req, payload) {
   return { ok: true, signed: true, reason: 'signature_valid' };
 }
 
-async function storeInTable(payload, meta = {}) {
+async function storeInTable(payload, routing, meta = {}) {
   const conn = process.env.LEADS_TABLE_CONNECTION_STRING;
   const tableName = process.env.LEADS_TABLE_NAME || 'inboundleads';
 
@@ -114,7 +159,11 @@ async function storeInTable(payload, meta = {}) {
     submittedAt: sanitize(payload.submittedAt, 40) || nowIso(),
     receivedAt: nowIso(),
     lane: 'agent-os-lead-table',
-    signatureStatus: sanitize(meta.signatureStatus || 'unknown', 120)
+    signatureStatus: sanitize(meta.signatureStatus || 'unknown', 120),
+    formType: sanitize(routing.formType || 'general', 40),
+    priority: sanitize(routing.priority || 'nurture', 20),
+    fitScore: toInt(routing.fitScore, 0),
+    responseSlaMinutes: toInt(routing.responseSlaMinutes, 240)
   };
 
   await client.createEntity(entity);
@@ -156,7 +205,7 @@ async function forwardToWebhook(payload) {
   return { forwarded: true };
 }
 
-async function notifyTelegram(payload, stored) {
+async function notifyTelegram(payload, stored, routing) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
   const threadId = process.env.TELEGRAM_THREAD_ID;
@@ -165,13 +214,19 @@ async function notifyTelegram(payload, stored) {
     return { notified: false, reason: 'telegram_not_configured' };
   }
 
+  const priorityTag = String(routing.priority || 'nurture').toUpperCase();
+  const urgencyEmoji = routing.priority === 'hot' ? '🔥' : routing.priority === 'warm' ? '⚡' : '🧊';
+
   const lines = [
-    'New Lead Captured',
+    `${urgencyEmoji} New Lead Captured (${priorityTag})`,
     `Name: ${sanitize(payload.name, 120) || '-'}`,
     `Email: ${sanitize(payload.email, 200) || '-'}`,
     `Company: ${sanitize(payload.company, 120) || '-'}`,
     `Target: ${sanitize(payload.target, 120) || '-'}`,
     `Source: ${sanitize(payload.source, 120) || '-'}`,
+    `Form: ${sanitize(routing.formType, 40) || 'general'}`,
+    `Fit score: ${toInt(routing.fitScore, 0)}/100`,
+    `Response SLA: ${toInt(routing.responseSlaMinutes, 240)} min`,
     `Lead ID: ${stored.leadId}`,
     `Received: ${stored.receivedAt}`
   ];
@@ -209,7 +264,8 @@ module.exports = async function (context, req) {
       return json(401, { ok: false, error: sig.reason });
     }
 
-    const stored = await storeInTable(payload, { signatureStatus: sig.reason });
+    const routing = deriveLeadRouting(payload);
+    const stored = await storeInTable(payload, routing, { signatureStatus: sig.reason });
 
     let forwardState = { forwarded: false };
     try {
@@ -220,7 +276,7 @@ module.exports = async function (context, req) {
 
     let telegramState = { notified: false };
     try {
-      telegramState = await notifyTelegram(payload, stored);
+      telegramState = await notifyTelegram(payload, stored, routing);
     } catch (telegramError) {
       context.log.warn('telegram notify failed', telegramError.message);
     }
@@ -232,7 +288,8 @@ module.exports = async function (context, req) {
       leadId: stored.leadId,
       forwarded: forwardState.forwarded,
       telegram: telegramState.notified,
-      signed: sig.signed
+      signed: sig.signed,
+      routing
     });
   } catch (error) {
     context.log.error('lead handler error', error);

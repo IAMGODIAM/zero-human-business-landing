@@ -228,26 +228,75 @@ leadForm?.addEventListener('submit', async (e) => {
 const qualForm = document.getElementById('qualForm');
 const qualStatus = document.getElementById('qualStatus');
 
+function computeQualificationProfile() {
+  const monthlyRevenue = Number(document.getElementById('q_revenue').value || 0);
+  const desiredLift = Number(document.getElementById('q_lift').value || 0);
+  const bottleneck = String(document.getElementById('q_bottleneck').value || '');
+  const canStartIn7Days = String(document.getElementById('q_start').value || '');
+
+  let fitScore = 0;
+  if (monthlyRevenue >= 50000) fitScore += 35;
+  else if (monthlyRevenue >= 20000) fitScore += 28;
+  else if (monthlyRevenue >= 10000) fitScore += 22;
+  else if (monthlyRevenue >= 5000) fitScore += 14;
+  else if (monthlyRevenue > 0) fitScore += 8;
+
+  if (desiredLift >= 30000) fitScore += 30;
+  else if (desiredLift >= 15000) fitScore += 24;
+  else if (desiredLift >= 8000) fitScore += 18;
+  else if (desiredLift >= 3000) fitScore += 12;
+  else if (desiredLift > 0) fitScore += 6;
+
+  if (canStartIn7Days === 'Yes') fitScore += 20;
+  else if (canStartIn7Days === 'No') fitScore += 4;
+
+  if (bottleneck === 'Follow-up consistency' || bottleneck === 'Close rate') fitScore += 15;
+  else if (bottleneck) fitScore += 8;
+
+  fitScore = Math.max(0, Math.min(100, Math.round(fitScore)));
+
+  let priority = 'nurture';
+  let responseSlaMinutes = 240;
+  if (fitScore >= 75 && canStartIn7Days === 'Yes') {
+    priority = 'hot';
+    responseSlaMinutes = 15;
+  } else if (fitScore >= 55) {
+    priority = 'warm';
+    responseSlaMinutes = 60;
+  }
+
+  return {
+    form: 'qualification',
+    monthlyRevenue,
+    desiredLift,
+    bottleneck,
+    canStartIn7Days,
+    fitScore,
+    priority,
+    responseSlaMinutes,
+    experiment: {
+      version: EXPERIMENT.version,
+      headlineId: EXPERIMENT.headlineId,
+      offerId: EXPERIMENT.offerId,
+      comboId: EXPERIMENT.comboId
+    }
+  };
+}
+
 qualForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
 
+  const profile = computeQualificationProfile();
   const payload = {
     name: document.getElementById('q_name').value,
     email: document.getElementById('q_email').value,
     company: 'Qualification Form',
-    target: `$${document.getElementById('q_lift').value} monthly lift`,
-    stack: JSON.stringify({
-      form: 'qualification',
-      monthlyRevenue: Number(document.getElementById('q_revenue').value || 0),
-      bottleneck: document.getElementById('q_bottleneck').value,
-      canStartIn7Days: document.getElementById('q_start').value,
-      experiment: {
-        version: EXPERIMENT.version,
-        headlineId: EXPERIMENT.headlineId,
-        offerId: EXPERIMENT.offerId,
-        comboId: EXPERIMENT.comboId
-      }
-    }),
+    target: `$${profile.desiredLift} monthly lift`,
+    stack: JSON.stringify(profile),
+    fitScore: profile.fitScore,
+    priority: profile.priority,
+    responseSlaMinutes: profile.responseSlaMinutes,
+    formType: 'qualification',
     utm: attributionTags(),
     submittedAt: new Date().toISOString(),
     source: `strategy-call-qualification|${EXPERIMENT.comboId}`
@@ -264,7 +313,7 @@ qualForm?.addEventListener('submit', async (e) => {
     const parsed = await safeJson(res);
     if (!res.ok) throw new Error(parsed.raw || `HTTP ${res.status}`);
 
-    qualStatus.textContent = 'Qualified request received. We will send your call options shortly.';
+    qualStatus.textContent = `Qualified request received (${profile.priority.toUpperCase()} priority, ${profile.responseSlaMinutes}m response SLA).`;
     qualForm.reset();
   } catch (err) {
     qualStatus.textContent = `Qualification intake unavailable (${err.message}). Use build request form below.`;
