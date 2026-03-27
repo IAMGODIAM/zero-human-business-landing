@@ -71,3 +71,11 @@ Operational notes
 - Lead is always persisted to table first after signature gate passes.
 - Webhook and Telegram failures do not block lead acceptance.
 - API response includes forwarded, telegram, and signed booleans for diagnostics.
+
+CRM hygiene maintenance (safe by default)
+- Dry-run audit (no writes):
+  - `node scripts/crm_hygiene.js`
+- Apply lifecycle defaults to legacy rows missing stage/status/outreachStatus:
+  - `node scripts/crm_hygiene.js --apply`
+- Optional bounded scan (for quick checks in cron/debug):
+  - `node scripts/crm_hygiene.js --limit 500`

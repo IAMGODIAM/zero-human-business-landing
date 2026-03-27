@@ -72,3 +72,40 @@
 - Grant/credit-first posture preserved; no paid channel spend introduced.
 - Cash spend changes today: **none**.
 - Execution remained reversible and compliance-safe.
+
+## 2026-03-27 (cron run #3)
+
+### KPI snapshot (toward $1,000/day)
+- Cash/day (rolling 3d): **unknown** (`dailykpi` still empty)
+- Cash/day target: **$1,000/day**
+- Gap to target: **$1,000/day** (measurement gap persists until KPI rows are posted)
+- Lead table count: **10** total
+- New leads in last 24h: **0**
+- Latest lead age: **~85h stale** (`receivedAt`: 2026-03-24T01:07:25.900Z)
+- Duplicate lead emails: **0**
+- CRM hygiene: **0 missing email, 0 missing name, 0 missing lifecycle fields** (after controlled backfill)
+
+### Pipeline + execution health
+- Site and API smoke checks remain healthy (`/` 200, `/api/lead` validation 400 on empty payload).
+- Admin endpoints still protected (`/api/kpi`, `/api/leads`, `/api/weekly-memo` return 401 without admin auth).
+- Azure Static Web Apps CI/CD remains green on latest runs.
+
+### Improvements shipped today (reversible, auditable)
+1. **CRM hygiene maintenance automation**
+   - Added `scripts/crm_hygiene.js` to audit duplicate/broken records and lifecycle completeness in dry-run mode by default.
+   - Added optional `--apply` mode for controlled lifecycle-default backfill (`stage/status/outreachStatus`) with explicit operator intent.
+2. **CRM operations runbook update**
+   - Updated `docs/LEAD_OPERATIONS.md` with dry-run/apply/limit command patterns for repeatable hygiene checks.
+3. **Live CRM artifact sync completed**
+   - Executed controlled backfill to patch 10 legacy rows missing lifecycle fields.
+   - Re-ran readiness audit to verify `records_missing_any_lifecycle=0` and no duplicate emails.
+
+### Blockers / risks
+- `dailykpi` table still empty/missing (`count=0`), so run-rate and trajectory remain unmeasured.
+- `LEAD_WEBHOOK_URL` is still unset, leaving downstream CRM forwarding inactive.
+- Lead generation velocity remains stalled (0 new leads in last 24h).
+
+### Budget posture
+- Grant/credit-first posture preserved.
+- No new paid spend or irreversible commercial commitments were made.
+- Changes remain reversible and auditable.
