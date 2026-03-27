@@ -162,6 +162,10 @@ async function storeInTable(payload, routing, meta = {}) {
     signatureStatus: sanitize(meta.signatureStatus || 'unknown', 120),
     formType: sanitize(routing.formType || 'general', 40),
     priority: sanitize(routing.priority || 'nurture', 20),
+    stage: 'new',
+    status: 'open',
+    outreachStatus: 'pending',
+    lifecycleUpdatedAt: nowIso(),
     fitScore: toInt(routing.fitScore, 0),
     responseSlaMinutes: toInt(routing.responseSlaMinutes, 240)
   };

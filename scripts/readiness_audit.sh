@@ -97,26 +97,57 @@ async function count(tableName, tsKeys = ['receivedAt', 'savedAt', 'submittedAt'
   const client = TableClient.fromConnectionString(conn, tableName);
   let count = 0;
   let latest = null;
+  const entities = [];
   try {
     for await (const e of client.listEntities()) {
       count += 1;
+      entities.push(e);
       const candidate = tsKeys.map((k) => e[k]).find(Boolean);
       if (candidate && (!latest || String(candidate) > String(latest))) latest = candidate;
       if (count >= 20000) break;
     }
   } catch (err) {
     if (String(err.message || err).includes('TableNotFound')) {
-      return { table: tableName, count: 0, latest: null, missing: true };
+      return { table: tableName, count: 0, latest: null, missing: true, entities: [] };
     }
     throw err;
   }
-  return { table: tableName, count, latest, missing: false };
+  return { table: tableName, count, latest, missing: false, entities };
+}
+
+function summarizeLifecycle(leads) {
+  const stage = {};
+  const status = {};
+  const outreach = {};
+  const emailCounts = {};
+
+  for (const e of leads) {
+    const stageKey = String(e.stage || '(blank)').trim() || '(blank)';
+    const statusKey = String(e.status || '(blank)').trim() || '(blank)';
+    const outreachKey = String(e.outreachStatus || '(blank)').trim() || '(blank)';
+    stage[stageKey] = (stage[stageKey] || 0) + 1;
+    status[statusKey] = (status[statusKey] || 0) + 1;
+    outreach[outreachKey] = (outreach[outreachKey] || 0) + 1;
+
+    const email = String(e.email || '').toLowerCase().trim();
+    if (email) emailCounts[email] = (emailCounts[email] || 0) + 1;
+  }
+
+  const duplicateEmails = Object.entries(emailCounts).filter(([, n]) => n > 1).length;
+  return { stage, status, outreach, duplicateEmails };
 }
 
 (async () => {
   const leads = await count(leadsTable);
   const kpi = await count(kpiTable, ['savedAt']);
   console.log(`  - ${leads.table}: count=${leads.count} latest=${leads.latest || 'n/a'} missing=${leads.missing}`);
+  if (!leads.missing) {
+    const lifecycle = summarizeLifecycle(leads.entities || []);
+    console.log(`    lifecycle.stage=${JSON.stringify(lifecycle.stage)}`);
+    console.log(`    lifecycle.status=${JSON.stringify(lifecycle.status)}`);
+    console.log(`    lifecycle.outreach=${JSON.stringify(lifecycle.outreach)}`);
+    console.log(`    duplicate_emails=${lifecycle.duplicateEmails}`);
+  }
   console.log(`  - ${kpi.table}: count=${kpi.count} latest=${kpi.latest || 'n/a'} missing=${kpi.missing}`);
 })();
 NODE
