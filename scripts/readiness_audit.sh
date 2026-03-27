@@ -86,7 +86,7 @@ if [[ -z "$KPI_TABLE" ]]; then KPI_TABLE="dailykpi"; fi
 export CONN LEADS_TABLE KPI_TABLE
 
 pushd api >/dev/null
-npm install --silent >/dev/null 2>&1 || true
+npm install --silent --no-package-lock --no-save >/dev/null 2>&1 || true
 node <<'NODE'
 const { TableClient } = require('@azure/data-tables');
 const conn = process.env.CONN;
@@ -97,22 +97,37 @@ async function count(tableName, tsKeys = ['receivedAt', 'savedAt', 'submittedAt'
   const client = TableClient.fromConnectionString(conn, tableName);
   let count = 0;
   let latest = null;
+  let latestMs = null;
+  let last24h = 0;
   const entities = [];
+  const nowMs = Date.now();
   try {
     for await (const e of client.listEntities()) {
       count += 1;
       entities.push(e);
       const candidate = tsKeys.map((k) => e[k]).find(Boolean);
-      if (candidate && (!latest || String(candidate) > String(latest))) latest = candidate;
+      if (candidate) {
+        const candidateMs = Date.parse(String(candidate));
+        if (Number.isFinite(candidateMs)) {
+          if (candidateMs >= nowMs - (24 * 60 * 60 * 1000)) last24h += 1;
+          if (latestMs === null || candidateMs > latestMs) {
+            latestMs = candidateMs;
+            latest = candidate;
+          }
+        } else if (!latest || String(candidate) > String(latest)) {
+          latest = candidate;
+        }
+      }
       if (count >= 20000) break;
     }
   } catch (err) {
     if (String(err.message || err).includes('TableNotFound')) {
-      return { table: tableName, count: 0, latest: null, missing: true, entities: [] };
+      return { table: tableName, count: 0, latest: null, latestAgeHours: null, last24h: 0, missing: true, entities: [] };
     }
     throw err;
   }
-  return { table: tableName, count, latest, missing: false, entities };
+  const latestAgeHours = latestMs === null ? null : Math.round((nowMs - latestMs) / (1000 * 60 * 60));
+  return { table: tableName, count, latest, latestAgeHours, last24h, missing: false, entities };
 }
 
 function summarizeLifecycle(leads) {
@@ -120,6 +135,9 @@ function summarizeLifecycle(leads) {
   const status = {};
   const outreach = {};
   const emailCounts = {};
+  let missingEmail = 0;
+  let missingName = 0;
+  let missingLifecycleAny = 0;
 
   for (const e of leads) {
     const stageKey = String(e.stage || '(blank)').trim() || '(blank)';
@@ -130,25 +148,34 @@ function summarizeLifecycle(leads) {
     outreach[outreachKey] = (outreach[outreachKey] || 0) + 1;
 
     const email = String(e.email || '').toLowerCase().trim();
+    const name = String(e.name || '').trim();
     if (email) emailCounts[email] = (emailCounts[email] || 0) + 1;
+    else missingEmail += 1;
+    if (!name) missingName += 1;
+    if (!String(e.stage || '').trim() || !String(e.status || '').trim() || !String(e.outreachStatus || '').trim()) {
+      missingLifecycleAny += 1;
+    }
   }
 
   const duplicateEmails = Object.entries(emailCounts).filter(([, n]) => n > 1).length;
-  return { stage, status, outreach, duplicateEmails };
+  return { stage, status, outreach, duplicateEmails, missingEmail, missingName, missingLifecycleAny };
 }
 
 (async () => {
   const leads = await count(leadsTable);
   const kpi = await count(kpiTable, ['savedAt']);
-  console.log(`  - ${leads.table}: count=${leads.count} latest=${leads.latest || 'n/a'} missing=${leads.missing}`);
+  console.log(`  - ${leads.table}: count=${leads.count} latest=${leads.latest || 'n/a'} latest_age_h=${leads.latestAgeHours ?? 'n/a'} last24h=${leads.last24h} missing=${leads.missing}`);
   if (!leads.missing) {
     const lifecycle = summarizeLifecycle(leads.entities || []);
     console.log(`    lifecycle.stage=${JSON.stringify(lifecycle.stage)}`);
     console.log(`    lifecycle.status=${JSON.stringify(lifecycle.status)}`);
     console.log(`    lifecycle.outreach=${JSON.stringify(lifecycle.outreach)}`);
     console.log(`    duplicate_emails=${lifecycle.duplicateEmails}`);
+    console.log(`    records_missing_email=${lifecycle.missingEmail}`);
+    console.log(`    records_missing_name=${lifecycle.missingName}`);
+    console.log(`    records_missing_any_lifecycle=${lifecycle.missingLifecycleAny}`);
   }
-  console.log(`  - ${kpi.table}: count=${kpi.count} latest=${kpi.latest || 'n/a'} missing=${kpi.missing}`);
+  console.log(`  - ${kpi.table}: count=${kpi.count} latest=${kpi.latest || 'n/a'} latest_age_h=${kpi.latestAgeHours ?? 'n/a'} last24h=${kpi.last24h} missing=${kpi.missing}`);
 })();
 NODE
 popd >/dev/null
