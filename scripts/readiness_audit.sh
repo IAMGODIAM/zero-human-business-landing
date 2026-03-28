@@ -138,6 +138,20 @@ function summarizeLifecycle(leads) {
   let missingEmail = 0;
   let missingName = 0;
   let missingLifecycleAny = 0;
+  let pendingOutreachOver24h = 0;
+  let staleOpenOver48h = 0;
+  let lifecycleTouchedLast24h = 0;
+  const nowMs = Date.now();
+
+  function parseEntityTimestamp(entity, keys) {
+    for (const k of keys) {
+      const raw = entity[k];
+      if (!raw) continue;
+      const ms = Date.parse(String(raw));
+      if (Number.isFinite(ms)) return ms;
+    }
+    return null;
+  }
 
   for (const e of leads) {
     const stageKey = String(e.stage || '(blank)').trim() || '(blank)';
@@ -155,10 +169,40 @@ function summarizeLifecycle(leads) {
     if (!String(e.stage || '').trim() || !String(e.status || '').trim() || !String(e.outreachStatus || '').trim()) {
       missingLifecycleAny += 1;
     }
+
+    const ingestMs = parseEntityTimestamp(e, ['receivedAt', 'savedAt', 'submittedAt']);
+    const lifecycleMs = parseEntityTimestamp(e, ['lifecycleUpdatedAt']);
+
+    if (lifecycleMs !== null && lifecycleMs >= nowMs - (24 * 60 * 60 * 1000)) {
+      lifecycleTouchedLast24h += 1;
+    }
+
+    const statusNorm = String(e.status || '').trim().toLowerCase();
+    const outreachNorm = String(e.outreachStatus || '').trim().toLowerCase();
+
+    if (ingestMs !== null) {
+      if (outreachNorm === 'pending' && ingestMs < nowMs - (24 * 60 * 60 * 1000)) {
+        pendingOutreachOver24h += 1;
+      }
+      if (statusNorm === 'open' && ingestMs < nowMs - (48 * 60 * 60 * 1000)) {
+        staleOpenOver48h += 1;
+      }
+    }
   }
 
   const duplicateEmails = Object.entries(emailCounts).filter(([, n]) => n > 1).length;
-  return { stage, status, outreach, duplicateEmails, missingEmail, missingName, missingLifecycleAny };
+  return {
+    stage,
+    status,
+    outreach,
+    duplicateEmails,
+    missingEmail,
+    missingName,
+    missingLifecycleAny,
+    pendingOutreachOver24h,
+    staleOpenOver48h,
+    lifecycleTouchedLast24h,
+  };
 }
 
 (async () => {
@@ -174,6 +218,9 @@ function summarizeLifecycle(leads) {
     console.log(`    records_missing_email=${lifecycle.missingEmail}`);
     console.log(`    records_missing_name=${lifecycle.missingName}`);
     console.log(`    records_missing_any_lifecycle=${lifecycle.missingLifecycleAny}`);
+    console.log(`    pending_outreach_over_24h=${lifecycle.pendingOutreachOver24h}`);
+    console.log(`    stale_open_over_48h=${lifecycle.staleOpenOver48h}`);
+    console.log(`    lifecycle_touched_last24h=${lifecycle.lifecycleTouchedLast24h}`);
   }
   console.log(`  - ${kpi.table}: count=${kpi.count} latest=${kpi.latest || 'n/a'} latest_age_h=${kpi.latestAgeHours ?? 'n/a'} last24h=${kpi.last24h} missing=${kpi.missing}`);
 })();

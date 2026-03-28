@@ -109,3 +109,45 @@
 - Grant/credit-first posture preserved.
 - No new paid spend or irreversible commercial commitments were made.
 - Changes remain reversible and auditable.
+
+## 2026-03-28
+
+### KPI snapshot (toward $1,000/day)
+- Cash/day (rolling 3d): **unknown** (`dailykpi` table still missing/empty)
+- Cash/day target: **$1,000/day**
+- Gap to target: **$1,000/day** (cannot quantify progress until KPI ingestion is active)
+- Lead table count: **10** total
+- New leads in last 24h: **0**
+- Latest lead age: **~109h stale** (`receivedAt`: 2026-03-24T01:07:25.900Z)
+- Lifecycle distribution: **stage=new(10), status=open(10), outreach=pending(10)**
+- Duplicate lead emails: **0**
+- CRM hygiene: **0 missing email, 0 missing name, 0 missing lifecycle fields**
+
+### Pipeline + execution health
+- Site/API smoke checks healthy and protected (`/` 200, `/api/lead` validation 400 on empty payload, admin endpoints 401 unauthenticated).
+- Azure Static Web Apps CI/CD latest runs remain green.
+- Pipeline pressure is now explicit in audit output:
+  - `pending_outreach_over_24h=10`
+  - `stale_open_over_48h=10`
+  - `lifecycle_touched_last24h=10`
+
+### Improvements shipped today (reversible, auditable)
+1. **Readiness audit pipeline instrumentation upgrade** (`scripts/readiness_audit.sh`)
+   - Added derived backlog metrics:
+     - `pending_outreach_over_24h`
+     - `stale_open_over_48h`
+     - `lifecycle_touched_last24h`
+   - Keeps existing lifecycle/duplicate/hygiene counters intact.
+2. **CRM artifact sync verification**
+   - Executed `node scripts/crm_hygiene.js` in dry-run mode against live table.
+   - Confirmed no duplicate/broken records and no lifecycle-field regressions.
+
+### Blockers / risks
+- `dailykpi` telemetry lane still missing (`count=0`), preventing run-rate and CAC/payback governance.
+- `LEAD_WEBHOOK_URL` remains unset; downstream CRM forwarding is still inactive.
+- Full lead backlog sits in `new/open/pending` with stale age >48h, creating conversion drag.
+
+### Budget posture
+- Grant/credit-first execution preserved.
+- No new cash-channel commitments or irreversible spend introduced.
+- Optimization remains focused on instrumentation + process hygiene before paid expansion.
