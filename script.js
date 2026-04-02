@@ -328,12 +328,28 @@ qualForm?.addEventListener('submit', async (e) => {
       throw new Error(errData.message || `HTTP ${res.status}`);
     }
 
-    // -- Success state --
+    // -- Success state with booking CTA --
+    const bookingUrl = 'https://calendar.google.com/calendar/render?action=TEMPLATE'
+      + '&text=' + encodeURIComponent('Agent Business OS Strategy Call')
+      + '&details=' + encodeURIComponent(
+          '25-minute strategy call to discuss Agent Business OS implementation.\n\n'
+          + 'Fit Score: ' + profile.fitScore + '/100\n'
+          + 'Priority: ' + profile.priority.toUpperCase() + '\n'
+          + 'Bottleneck: ' + profile.bottleneck + '\n'
+          + 'Monthly Revenue: $' + profile.monthlyRevenue
+        )
+      + '&add=israel%40e5enclave.com&dur=0025';
+
     qualStatus.innerHTML = `
       <span style="color:var(--ok);font-weight:700;">✓ Qualification submitted!</span><br>
       Priority: <strong>${profile.priority.toUpperCase()}</strong> · Fit score: <strong>${profile.fitScore}/100</strong><br>
-      Response SLA: <strong>${profile.responseSlaMinutes} minutes</strong><br>
-      <span style="color:var(--muted);">We'll reach out to <strong>${document.getElementById('q_email').value}</strong> shortly.</span>
+      <a href="${bookingUrl}" target="_blank" rel="noopener"
+         class="btn" style="margin-top:.75rem;display:inline-block;">
+        📅 Book Your Strategy Call Now
+      </a><br>
+      <span style="color:var(--muted);margin-top:.5rem;display:inline-block;">
+        We'll also reach out to <strong>${document.getElementById('q_email').value}</strong> within ${profile.responseSlaMinutes} minutes.
+      </span>
     `;
     qualStatus.className = 'qual-success';
     qualForm.reset();
@@ -365,36 +381,4 @@ qualForm?.addEventListener('submit', async (e) => {
   }
 });
 
-const invokeForm = document.getElementById('invokeForm');
-const invokeOutput = document.getElementById('invokeOutput');
 
-invokeForm?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-
-  const mode = document.getElementById('invokeMode').value;
-  const profile = document.getElementById('invokeProfile').value;
-  const docType = document.getElementById('docType').value.trim();
-  const topic = document.getElementById('topic').value.trim();
-  const keyPoints = document.getElementById('keyPoints').value.trim();
-
-  invokeOutput.textContent = 'Invoking secure backend...';
-
-  try {
-    const res = await fetch('/api/invoke', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mode, profile, docType, topic, keyPoints })
-    });
-
-    const parsed = await safeJson(res);
-    if (!res.ok) {
-      invokeOutput.textContent = `Invoke failed (${res.status})\n\n${parsed.raw}`;
-      return;
-    }
-
-    const output = parsed.data?.output || parsed.data?.text || parsed.raw;
-    invokeOutput.textContent = typeof output === 'string' ? output : JSON.stringify(output, null, 2);
-  } catch (err) {
-    invokeOutput.textContent = `Invoke error: ${err.message}`;
-  }
-});
