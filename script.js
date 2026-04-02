@@ -1,3 +1,7 @@
+/* ── Agent Business OS · Script ──────────────────────────────────────────── */
+
+/* ── Utilities ──────────────────────────────────────────────────────────── */
+
 function currency(n) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
 }
@@ -42,6 +46,8 @@ function getVisitorId() {
   return id;
 }
 
+/* ── Experiment Variants ────────────────────────────────────────────────── */
+
 const HEADLINE_VARIANTS = [
   {
     id: 'h1',
@@ -85,6 +91,8 @@ const OFFER_VARIANTS = [
   }
 ];
 
+/* ── Experiment Assignment ──────────────────────────────────────────────── */
+
 function getExperimentAssignment() {
   const p = new URLSearchParams(window.location.search);
   const forcedH = Number(p.get('h'));
@@ -119,6 +127,8 @@ function getExperimentAssignment() {
   };
 }
 
+/* ── Apply Experiment to Page ───────────────────────────────────────────── */
+
 function applyExperimentToPage(exp) {
   const headlineEl = document.getElementById('heroHeadline');
   const sublineEl = document.getElementById('heroSubline');
@@ -141,6 +151,8 @@ function applyExperimentToPage(exp) {
 const EXPERIMENT = getExperimentAssignment();
 applyExperimentToPage(EXPERIMENT);
 
+/* ── Attribution Tags ───────────────────────────────────────────────────── */
+
 function attributionTags() {
   const p = new URLSearchParams(window.location.search);
   return {
@@ -156,6 +168,8 @@ function attributionTags() {
     landing_query: p.toString()
   };
 }
+
+/* ── ROI Forecaster ─────────────────────────────────────────────────────── */
 
 const roiForm = document.getElementById('roiForm');
 const roiOutput = document.getElementById('roiOutput');
@@ -183,6 +197,8 @@ roiForm?.addEventListener('submit', (e) => {
     <p>Net impact: <strong>${currency(netLift)}</strong></p>
   `;
 });
+
+/* ── Lead / Build Request Form ──────────────────────────────────────────── */
 
 const leadForm = document.getElementById('leadForm');
 const leadStatus = document.getElementById('leadStatus');
@@ -224,6 +240,8 @@ leadForm?.addEventListener('submit', async (e) => {
     window.location.href = mailto;
   }
 });
+
+/* ── Qualification Scoring ──────────────────────────────────────────────── */
 
 const qualForm = document.getElementById('qualForm');
 const qualStatus = document.getElementById('qualStatus');
@@ -283,9 +301,8 @@ function computeQualificationProfile() {
   };
 }
 
-// ── Qualification Form → Azure Container App Webhook ───────────────────────
+/* ── Qualification Form → Azure Container App Webhook ───────────────────── */
 const QUALIFICATION_WEBHOOK_URL = 'https://qual-webhook.orangehill-b7025e2b.eastus2.azurecontainerapps.io/api/qualify';
-// ────────────────────────────────────────────────────────────────────────────
 
 qualForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -372,7 +389,7 @@ qualForm?.addEventListener('submit', async (e) => {
     qualStatus.innerHTML = `
       <span style="color:#ff6b6b;font-weight:700;">⚠ Submission could not be completed</span><br>
       <span style="color:var(--muted);">${err.message}</span><br>
-      <a href="${mailto}" style="color:var(--brand);text-decoration:underline;font-weight:600;">Click here to send via email instead →</a>
+      <a href="${mailto}" style="color:var(--accent);text-decoration:underline;font-weight:600;">Click here to send via email instead →</a>
     `;
     qualStatus.className = 'qual-error';
   } finally {
@@ -381,4 +398,18 @@ qualForm?.addEventListener('submit', async (e) => {
   }
 });
 
+/* ── Mobile Nav Toggle ──────────────────────────────────────────────────── */
 
+const navToggle = document.getElementById('navToggle');
+const navLinks = document.getElementById('navLinks');
+
+navToggle?.addEventListener('click', () => {
+  navLinks.classList.toggle('open');
+});
+
+// Close mobile nav on link click
+navLinks?.querySelectorAll('a').forEach((a) => {
+  a.addEventListener('click', () => {
+    navLinks.classList.remove('open');
+  });
+});
