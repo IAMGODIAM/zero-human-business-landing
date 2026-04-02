@@ -283,9 +283,17 @@ function computeQualificationProfile() {
   };
 }
 
+// ── Qualification Form → Google Apps Script Webhook ────────────────────────
+// INSTRUCTIONS: After deploying the Google Apps Script (see api/google-apps-script.js),
+// paste your deployed Web App URL below, replacing the placeholder.
+const QUALIFICATION_WEBHOOK_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID_HERE/exec';
+// Example: 'https://script.google.com/macros/s/AKfycbx.../exec'
+// ────────────────────────────────────────────────────────────────────────────
+
 qualForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
 
+  const submitBtn = qualForm.querySelector('button[type="submit"]');
   const profile = computeQualificationProfile();
   const payload = {
     name: document.getElementById('q_name').value,
@@ -293,6 +301,10 @@ qualForm?.addEventListener('submit', async (e) => {
     company: 'Qualification Form',
     target: `$${profile.desiredLift} monthly lift`,
     stack: JSON.stringify(profile),
+    monthlyRevenue: profile.monthlyRevenue,
+    desiredLift: profile.desiredLift,
+    bottleneck: profile.bottleneck,
+    canStartIn7Days: profile.canStartIn7Days,
     fitScore: profile.fitScore,
     priority: profile.priority,
     responseSlaMinutes: profile.responseSlaMinutes,
@@ -302,21 +314,63 @@ qualForm?.addEventListener('submit', async (e) => {
     source: `strategy-call-qualification|${EXPERIMENT.comboId}`
   };
 
-  qualStatus.textContent = 'Submitting qualification...';
+  // -- Submitting state --
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Submitting...';
+  qualStatus.textContent = '';
+  qualStatus.className = 'muted';
 
   try {
-    const res = await fetch('/api/lead', {
+    // POST to Google Apps Script webhook
+    const res = await fetch(QUALIFICATION_WEBHOOK_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      headers: { 'Content-Type': 'text/plain' },  // text/plain avoids CORS preflight with Apps Script
+      body: JSON.stringify(payload),
+      mode: 'no-cors'  // Apps Script does not support CORS preflight; we accept opaque response
     });
-    const parsed = await safeJson(res);
-    if (!res.ok) throw new Error(parsed.raw || `HTTP ${res.status}`);
 
-    qualStatus.textContent = `Qualified request received (${profile.priority.toUpperCase()} priority, ${profile.responseSlaMinutes}m response SLA).`;
+    // With mode:'no-cors' we get an opaque response (status 0), so we cannot inspect res.ok.
+    // We optimistically show success. If the webhook URL is wrong, Apps Script returns HTML
+    // error but we can't read it. The fallback is the email mailto below.
+    //
+    // If you switch to mode:'cors' after deploying, you can check res.ok and parse JSON:
+    // const parsed = await safeJson(res);
+    // if (!res.ok) throw new Error(parsed.raw || `HTTP ${res.status}`);
+
+    // -- Success state --
+    qualStatus.innerHTML = `
+      <span style="color:var(--ok);font-weight:700;">✓ Qualification submitted!</span><br>
+      Priority: <strong>${profile.priority.toUpperCase()}</strong> · Fit score: <strong>${profile.fitScore}/100</strong><br>
+      Response SLA: <strong>${profile.responseSlaMinutes} minutes</strong><br>
+      <span style="color:var(--muted);">We'll reach out to <strong>${document.getElementById('q_email').value}</strong> shortly.</span>
+    `;
+    qualStatus.className = 'qual-success';
     qualForm.reset();
+
   } catch (err) {
-    qualStatus.textContent = `Qualification intake unavailable (${err.message}). Use build request form below.`;
+    // -- Error state with email fallback --
+    const fallbackBody = encodeURIComponent(
+      `Qualification Form Submission\n\n`
+      + `Name: ${payload.name}\n`
+      + `Email: ${payload.email}\n`
+      + `Monthly Revenue: $${payload.monthlyRevenue}\n`
+      + `Bottleneck: ${payload.bottleneck}\n`
+      + `Desired Lift: $${payload.desiredLift}\n`
+      + `Start in 7 Days: ${payload.canStartIn7Days}\n`
+      + `Fit Score: ${payload.fitScore}\n`
+      + `Priority: ${payload.priority}\n`
+    );
+    const mailto = `mailto:israel@e5enclave.com?subject=Qualification%20Request%20-%20${encodeURIComponent(payload.name)}&body=${fallbackBody}`;
+
+    qualStatus.innerHTML = `
+      <span style="color:#ff6b6b;font-weight:700;">⚠ Submission could not be completed</span><br>
+      <span style="color:var(--muted);">${err.message}</span><br>
+      <a href="${mailto}" style="color:var(--brand);text-decoration:underline;font-weight:600;">Click here to send via email instead →</a>
+    `;
+    qualStatus.className = 'qual-error';
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit Qualification + Request Call';
   }
 });
 

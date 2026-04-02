@@ -192,6 +192,30 @@ textarea { resize: vertical; }
   transition: width .25s ease;
 }
 
+/* Qualification form submission states */
+.qual-success {
+  background: rgba(110, 247, 189, 0.08);
+  border: 1px solid rgba(110, 247, 189, 0.25);
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  margin-top: 0.4rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+.qual-error {
+  background: rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(255, 107, 107, 0.25);
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  margin-top: 0.4rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .footer {
   border-top: 1px solid rgba(255,255,255,.06);
   padding: 1rem 0 2rem;
