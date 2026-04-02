@@ -283,11 +283,8 @@ function computeQualificationProfile() {
   };
 }
 
-// ── Qualification Form → Google Apps Script Webhook ────────────────────────
-// INSTRUCTIONS: After deploying the Google Apps Script (see api/google-apps-script.js),
-// paste your deployed Web App URL below, replacing the placeholder.
-const QUALIFICATION_WEBHOOK_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID_HERE/exec';
-// Example: 'https://script.google.com/macros/s/AKfycbx.../exec'
+// ── Qualification Form → Azure Container App Webhook ───────────────────────
+const QUALIFICATION_WEBHOOK_URL = 'https://qual-webhook.orangehill-b7025e2b.eastus2.azurecontainerapps.io/api/qualify';
 // ────────────────────────────────────────────────────────────────────────────
 
 qualForm?.addEventListener('submit', async (e) => {
@@ -321,21 +318,15 @@ qualForm?.addEventListener('submit', async (e) => {
   qualStatus.className = 'muted';
 
   try {
-    // POST to Google Apps Script webhook
     const res = await fetch(QUALIFICATION_WEBHOOK_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },  // text/plain avoids CORS preflight with Apps Script
-      body: JSON.stringify(payload),
-      mode: 'no-cors'  // Apps Script does not support CORS preflight; we accept opaque response
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     });
-
-    // With mode:'no-cors' we get an opaque response (status 0), so we cannot inspect res.ok.
-    // We optimistically show success. If the webhook URL is wrong, Apps Script returns HTML
-    // error but we can't read it. The fallback is the email mailto below.
-    //
-    // If you switch to mode:'cors' after deploying, you can check res.ok and parse JSON:
-    // const parsed = await safeJson(res);
-    // if (!res.ok) throw new Error(parsed.raw || `HTTP ${res.status}`);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.message || `HTTP ${res.status}`);
+    }
 
     // -- Success state --
     qualStatus.innerHTML = `
