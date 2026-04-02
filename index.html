@@ -19,7 +19,7 @@
         <a href="#proof">Proof</a>
         <a href="#plan">30-Day Plan</a>
         <a href="#roi">ROI</a>
-        <a href="#invoke">Writing Invoke</a>
+
         <a href="#qualify">Book Call</a>
         <a class="btn btn-ghost" href="#cta">Start Build</a>
       </nav>
@@ -36,7 +36,7 @@
             We deploy your full operating stack: market intelligence, automated demand generation,
             qualification, conversion workflows, client onboarding, KPI reporting, and exception-only escalation.
           </p>
-          <p id="expBadge" class="small muted"></p>
+
           <div class="cta-row">
             <a href="#qualify" class="btn">Book Strategy Call</a>
             <a href="#cta" class="btn btn-ghost">Submit Build Request</a>
@@ -148,39 +148,6 @@
       </div>
     </section>
 
-    <section class="section" id="invoke">
-      <div class="container">
-        <h2>Writing Engine Invoke (Advanced)</h2>
-        <p class="sub">Use your writing repo endpoint as an execution lane for offer copy, email sequences, and sales assets.</p>
-        <div class="grid-2 cards">
-          <article class="card">
-            <h3>Invoke Configuration</h3>
-            <form id="invokeForm" class="stack">
-              <label>Mode
-                <select id="invokeMode">
-                  <option value="webhook">Production Webhook Lane</option>
-                  <option value="openai">OpenAI-Compatible Lane</option>
-                  <option value="architects">Architect's Voice Lane</option>
-                </select>
-              </label>
-              <label>Profile
-                <select id="invokeProfile">
-                  <option value="default">default</option>
-                </select>
-              </label>
-              <label>Document type <input id="docType" value="sales-letter" /></label>
-              <label>Topic / prompt <textarea id="topic" rows="4">Write a conversion-focused outbound email sequence for a zero-human automation offer.</textarea></label>
-              <label>Key points <textarea id="keyPoints" rows="4">Founder control, fast deployment, exception-only escalation, measurable ROI.</textarea></label>
-              <button class="btn" type="submit">Invoke Writing Engine</button>
-            </form>
-          </article>
-          <article class="card">
-            <h3>Invoke Output</h3>
-            <pre id="invokeOutput" class="output">No run yet.</pre>
-          </article>
-        </div>
-      </div>
-    </section>
 
     <section class="section dark" id="qualify">
       <div class="container grid-2">
@@ -271,10 +238,7 @@
             <summary>Can this run with our existing tools?</summary>
             <p>Yes. We integrate first, replace only when current tools are a bottleneck.</p>
           </details>
-          <details>
-            <summary>Can we connect our writing repo?</summary>
-            <p>Yes. This page includes a built-in invoke panel for webhook, OpenAI-compatible, or tRPC-style endpoints.</p>
-          </details>
+
         </div>
       </div>
     </section>
@@ -299,7 +263,7 @@
   <footer class="footer">
     <div class="container row between">
       <p>© Autonomous Revenue OS</p>
-      <p><a href="/outbound.html">Outbound Lane</a> · <a href="/kpi.html">KPI Board</a> · Mission-first. System-driven. Revenue-sustainable.</p>
+      <p>Mission-first. System-driven. Revenue-sustainable.</p>
     </div>
   </footer>
 
