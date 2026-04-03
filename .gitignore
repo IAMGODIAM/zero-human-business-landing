@@ -1,1 +1,24 @@
+# Google credentials and tokens
 webhook-worker/google_token.json
+google_token.json
+google_credentials.json
+google_client_secret.json
+google-ads.yaml
+
+# Environment variables
+.env
+.env.*
+
+# Keys and certificates
+*.key
+*.pem
+*.p12
+
+# Dependencies
+node_modules/
+
+# OS files
+.DS_Store
+
+# Logs
+*.log
