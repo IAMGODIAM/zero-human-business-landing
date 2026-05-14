@@ -1,3 +1,7 @@
+> ⚠️ **Superseded** — This landing page has been superseded.
+> Canonical: agentbusinessos.com (TBD)
+> Status: archive-ready after migration verification.
+
 Autonomous Revenue OS - Landing Page v2
 
 Live URL
